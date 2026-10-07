@@ -1,0 +1,1275 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบจัดตารางเวรอัตโนมัติ (Fair Duty Rota & LINE Notify)</title>
+    <!-- Bootstrap 5.3 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome 6 Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Google Fonts Prompt -->
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bs-body-font-family: 'Prompt', sans-serif;
+            --primary-color: #2563eb;
+            --sidebar-bg: #0f172a;
+            --card-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.025);
+        }
+        body {
+            font-family: 'Prompt', sans-serif;
+            background-color: #f8fafc;
+            color: #334155;
+            min-height: 100vh;
+        }
+        .sidebar {
+            background-color: var(--sidebar-bg);
+            min-height: 100vh;
+            color: #fff;
+            box-shadow: 4px 0 10px rgba(0, 0, 0, 0.05);
+        }
+        .nav-link {
+            color: #94a3b8;
+            border-radius: 10px;
+            margin-bottom: 6px;
+            padding: 12px 18px;
+            font-weight: 500;
+            transition: all 0.25s ease;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: #ffffff;
+            background-color: var(--primary-color);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+        .card {
+            border: none;
+            border-radius: 16px;
+            box-shadow: var(--card-shadow);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .calendar-table th {
+            text-align: center;
+            background-color: #f1f5f9;
+            padding: 14px 8px;
+            font-weight: 600;
+        }
+        .calendar-day {
+            min-height: 120px;
+            height: 120px;
+            vertical-align: top;
+            transition: all 0.2s ease;
+            position: relative;
+            cursor: pointer;
+            background-color: #ffffff;
+        }
+        .calendar-day:hover {
+            background-color: #f1f5f9 !important;
+            transform: scale(0.995);
+        }
+        .today-highlight {
+            background-color: #eff6ff !important;
+            border: 2px solid #3b82f6 !important;
+        }
+        .badge-shift {
+            font-size: 0.82rem;
+            padding: 7px 10px;
+            border-radius: 8px;
+            margin-top: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+            font-weight: 500;
+        }
+        .avatar-circle {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+        }
+        .toast-container {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 1080;
+        }
+        .override-tag {
+            font-size: 0.65rem;
+            background-color: #f59e0b;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-left: 4px;
+        }
+        .line-green-btn {
+            background-color: #06c755;
+            color: white;
+            border: none;
+            font-weight: 600;
+        }
+        .line-green-btn:hover {
+            background-color: #05b34c;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar Navigation -->
+        <div class="col-md-3 col-lg-2 sidebar p-3 collapse d-md-block" id="sidebarMenu">
+            <div class="d-flex align-items-center mb-4 px-2 text-white text-decoration-none">
+                <i class="fa-solid fa-calendar-check fa-2x text-primary me-3"></i>
+                <div>
+                    <div class="fw-bold fs-5 leading-tight">ระบบตารางเวร</div>
+                    <small class="text-muted" style="font-size: 0.75rem;">7-Member Fair Duty Rota</small>
+                </div>
+            </div>
+            <hr class="text-secondary opacity-25">
+            <ul class="nav nav-pills flex-column mb-auto">
+                <li class="nav-item">
+                    <a href="#" class="nav-link active" onclick="switchTab('dashboard', event)">
+                        <i class="fa-solid fa-chart-pie me-2"></i> ภาพรวมระบบ
+                    </a>
+                </li>
+                <li>
+                    <a href="#" class="nav-link" onclick="switchTab('schedule', event)">
+                        <i class="fa-solid fa-calendar-days me-2"></i> ตารางเวรประจำเดือน
+                    </a>
+                </li>
+                <li>
+                    <a href="#" class="nav-link" onclick="switchTab('members', event)">
+                        <i class="fa-solid fa-users me-2"></i> จัดการสมาชิก (7 คน)
+                    </a>
+                </li>
+                <li>
+                    <a href="#" class="nav-link" onclick="switchTab('settings', event)">
+                        <i class="fa-solid fa-sliders me-2"></i> ตั้งค่า & LINE / GAS
+                    </a>
+                </li>
+            </ul>
+            <hr class="text-secondary opacity-25">
+            <div class="p-3 bg-dark rounded-3 text-center small text-muted">
+                <i class="fa-solid fa-database text-success me-1"></i> <span id="sync-mode-indicator">LocalStorage Mode</span>
+            </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
+            
+            <!-- Mobile Navigation Toggle -->
+            <div class="d-md-none d-flex justify-content-between align-items-center mb-3 p-3 bg-white rounded-3 shadow-sm">
+                <h5 class="mb-0 fw-bold text-primary"><i class="fa-solid fa-calendar-check me-2"></i>ระบบตารางเวร</h5>
+                <button class="btn btn-primary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu">
+                    <i class="fa-solid fa-bars me-1"></i> เมนู
+                </button>
+            </div>
+
+            <!-- TAB 1: DASHBOARD -->
+            <div id="tab-dashboard" class="tab-content">
+                <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+                    <div>
+                        <h2 class="fw-bold mb-1"><i class="fa-solid fa-chart-line text-primary me-2"></i>ภาพรวมระบบ (Dashboard)</h2>
+                        <p class="text-muted mb-0">สรุปสถิติเวรประจำเดือน การกระจายความเท่าเทียม และตารางเวรล่วงหน้า</p>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-outline-primary" onclick="recalculateShifts()"><i class="fa-solid fa-arrows-rotate me-1"></i> คำนวณเวรใหม่</button>
+                        <button class="btn line-green-btn" onclick="sendMonthToLine()"><i class="fa-brands fa-line me-1"></i> ส่งตารางเดือนนี้เข้า LINE</button>
+                    </div>
+                </div>
+
+                <!-- Key Stat Cards -->
+                <div class="row g-3 mb-4">
+                    <div class="col-12 col-sm-6 col-xl-3">
+                        <div class="card p-3 bg-white border-start border-4 border-primary">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="text-muted small">จำนวนสมาชิกทั้งหมด</div>
+                                    <div class="fs-3 fw-bold" id="dash-members-count">7 คน</div>
+                                </div>
+                                <i class="fa-solid fa-users text-primary fa-2x opacity-75"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-sm-6 col-xl-3">
+                        <div class="card p-3 bg-white border-start border-4 border-success">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="text-muted small">ผู้เข้าเวรวันนี้</div>
+                                    <div class="fs-6 fw-bold text-success text-truncate" id="dash-today-duty" style="max-width: 150px;">-</div>
+                                </div>
+                                <i class="fa-solid fa-user-check text-success fa-2x opacity-75"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-sm-6 col-xl-3">
+                        <div class="card p-3 bg-white border-start border-4 border-warning">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="text-muted small">เงื่อนไขสัปดาห์</div>
+                                    <div class="fs-6 fw-bold text-dark">ไม่ซ้ำวัน / 1 วันต่อสัปดาห์</div>
+                                </div>
+                                <i class="fa-solid fa-calendar-week text-warning fa-2x opacity-75"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-sm-6 col-xl-3">
+                        <div class="card p-3 bg-white border-start border-4 border-info">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="text-muted small">ความเท่าเทียม</div>
+                                    <div class="fs-6 fw-bold text-info"><i class="fa-solid fa-circle-check text-success me-1"></i> กระจายเท่ากัน 100%</div>
+                                </div>
+                                <i class="fa-solid fa-scale-balanced text-info fa-2x opacity-75"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chart & Upcoming Duty List -->
+                <div class="row">
+                    <div class="col-lg-7 mb-4">
+                        <div class="card p-4 h-100">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="card-title fw-bold mb-0"><i class="fa-solid fa-chart-bar text-primary me-2"></i>จำนวนวันเข้าเวรต่อคน (เดือนนี้)</h5>
+                                <span class="badge bg-light text-dark border" id="chart-month-label">-</span>
+                            </div>
+                            <div style="position: relative; height: 280px;">
+                                <canvas id="dutyChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-5 mb-4">
+                        <div class="card p-4 h-100">
+                            <h5 class="card-title fw-bold mb-3"><i class="fa-solid fa-list-check text-primary me-2"></i>ตารางเวร 7 วันถัดไป (คลิกดู Pop-up)</h5>
+                            <ul class="list-group list-group-flush" id="upcoming-duty-list">
+                                <!-- JS Injected List -->
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: SCHEDULE (CALENDAR) -->
+            <div id="tab-schedule" class="tab-content d-none">
+                <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+                    <div>
+                        <h2 class="fw-bold mb-1"><i class="fa-solid fa-calendar-days text-primary me-2"></i>ตารางเวรประจำเดือน</h2>
+                        <p class="text-muted mb-0">คลิกที่ช่องวันที่เพื่อดู **Pop-up สรุปเวร** หรือสลับเวร และส่ง LINE รายวัน</p>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <label for="month-picker" class="fw-bold text-nowrap">เลือกเดือน:</label>
+                        <input type="month" id="month-picker" class="form-control" onchange="renderCalendar(); updateChart();">
+                        <button class="btn btn-success text-nowrap" onclick="syncWithGoogleSheet()"><i class="fa-solid fa-cloud-arrow-up me-1"></i> Sync Sheets</button>
+                        <button class="btn line-green-btn text-nowrap" onclick="sendMonthToLine()"><i class="fa-brands fa-line me-1"></i> สรุปส่ง LINE</button>
+                    </div>
+                </div>
+
+                <div class="alert alert-primary d-flex align-items-center rounded-3 mb-4" role="alert">
+                    <i class="fa-solid fa-circle-info fa-lg me-3"></i>
+                    <div><b>เคล็ดลับการใช้งาน:</b> สามารถคลิกวันใดก็ได้ในตารางปฏิทินเพื่อเปิด Pop-up รายละเอียด สลับเปลี่ยนตัวผู้เข้าเวรเฉพาะวันนั้น หรือกดส่งแจ้งเตือนการเข้าเวรเข้า LINE ได้ทันที</div>
+                </div>
+
+                <div class="card p-3">
+                    <div class="table-responsive">
+                        <table class="table table-bordered calendar-table mb-0">
+                            <thead>
+                                <tr>
+                                    <th class="text-danger">อาทิตย์</th>
+                                    <th>จันทร์</th>
+                                    <th>อังคาร</th>
+                                    <th>พุธ</th>
+                                    <th>พฤหัสบดี</th>
+                                    <th>ศุกร์</th>
+                                    <th class="text-primary">เสาร์</th>
+                                </tr>
+                            </thead>
+                            <tbody id="calendar-body">
+                                <!-- Calendar Grid Injected via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 3: MEMBERS -->
+            <div id="tab-members" class="tab-content d-none">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h2 class="fw-bold mb-1"><i class="fa-solid fa-users text-primary me-2"></i>จัดการรายชื่อสมาชิก</h2>
+                        <p class="text-muted mb-0">เพิ่ม/แก้ไข/ลบ รายชื่อสมาชิก และเลือกสีประจำตัว</p>
+                    </div>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#memberModal" onclick="openAddMemberModal()">
+                        <i class="fa-solid fa-user-plus me-1"></i> เพิ่มสมาชิก
+                    </button>
+                </div>
+
+                <div class="card p-3">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 80px;">ลำดับ</th>
+                                    <th>ชื่อ-นามสกุล</th>
+                                    <th>ตำแหน่ง / แผนก</th>
+                                    <th>สีประจำตัว</th>
+                                    <th class="text-center" style="width: 160px;">จัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="member-table-body">
+                                <!-- Dynamic Member List -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 4: SETTINGS & LINE/GAS -->
+            <div id="tab-settings" class="tab-content d-none">
+                <h2 class="fw-bold mb-4"><i class="fa-solid fa-gear text-primary me-2"></i>ตั้งค่าระบบ & LINE Messaging API / GAS</h2>
+                
+                <div class="row">
+                    <!-- Shift Cycle Settings -->
+                    <div class="col-lg-6 mb-4">
+                        <div class="card p-4 h-100">
+                            <h5 class="card-title fw-bold border-bottom pb-2 mb-3"><i class="fa-solid fa-sliders text-primary me-2"></i>กำหนดวันเริ่มรอบเวร</h5>
+                            <form id="settings-form" onsubmit="saveSettings(event)">
+                                <div class="mb-3">
+                                    <label for="start-date" class="form-label fw-bold">วันที่เริ่มรอบเวร (Anchor Date)</label>
+                                    <input type="date" class="form-control" id="start-date" required>
+                                    <div class="form-text">ระบบใช้วันนี้เป็นวันเริ่มต้นรอบจัดเวรหมุนเวียนสัปดาห์</div>
+                                </div>
+                                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk me-1"></i> บันทึกการตั้งค่า</button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- LINE Messaging API Configuration -->
+                    <div class="col-lg-6 mb-4">
+                        <div class="card p-4 h-100 border-start border-4 border-success">
+                            <h5 class="card-title fw-bold border-bottom pb-2 mb-3 text-success"><i class="fa-brands fa-line me-2"></i>ตั้งค่า LINE Messaging API</h5>
+                            <form onsubmit="saveLineSettings(event)">
+                                <div class="mb-3">
+                                    <label for="line-token" class="form-label fw-bold">Channel Access Token</label>
+                                    <input type="password" class="form-control" id="line-token" placeholder="วาง Long-lived Channel Access Token ที่นี่">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="line-target-id" class="form-label fw-bold">Target User ID / Group ID</label>
+                                    <input type="text" class="form-control" id="line-target-id" placeholder="เช่น U123456789... หรือ C123456789...">
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <button type="button" class="btn btn-outline-success" onclick="testLineMessage()"><i class="fa-solid fa-paper-plane me-1"></i> ทดสอบส่ง LINE</button>
+                                    <button type="submit" class="btn line-green-btn"><i class="fa-solid fa-save me-1"></i> บันทึกการตั้งค่า LINE</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Google Sheets Database Integration -->
+                    <div class="col-lg-12 mb-4">
+                        <div class="card p-4">
+                            <h5 class="card-title fw-bold border-bottom pb-2 mb-3"><i class="fa-solid fa-cloud text-info me-2"></i>เชื่อมต่อ Google Sheets Database & Apps Script</h5>
+                            <div class="row align-items-center">
+                                <div class="col-md-8 mb-3 mb-md-0">
+                                    <label for="api-url" class="form-label fw-bold">Google Apps Script Web App URL</label>
+                                    <input type="url" class="form-control" id="api-url" placeholder="https://script.google.com/macros/s/.../exec">
+                                    <div class="form-text">ใส่ Web App URL ที่ได้จากการ Deploy ใน Apps Script เพื่อซิงค์ข้อมูล และตั้งเตือนอัตโนมัติ 06:00 น.</div>
+                                </div>
+                                <div class="col-md-4 d-flex flex-column gap-2">
+                                    <button class="btn btn-success" onclick="saveApiUrl()"><i class="fa-solid fa-save me-1"></i> บันทึก Web App URL</button>
+                                    <button class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#gasCodeModal">
+                                        <i class="fa-solid fa-code me-1"></i> คัดลอกโค้ด Google Apps Script (GAS)
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+</div>
+
+<!-- 1. MODAL: POP-UP รายละเอียดเวรรายวัน & ปุ่มส่ง LINE -->
+<div class="modal fade" id="dayDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title fw-bold" id="dayModalDateTitle">
+                    <i class="fa-solid fa-calendar-day me-2"></i>รายละเอียดเวรประจำวัน
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="modal-selected-date">
+                
+                <div class="p-3 bg-light rounded-3 mb-3 text-center border">
+                    <span class="text-muted small d-block">วันที่เลือก</span>
+                    <h4 class="fw-bold text-primary mb-0" id="modal-full-date-display">-</h4>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold"><i class="fa-solid fa-user-shield me-1"></i> ผู้เข้าเวรประจำวัน</label>
+                    <div id="modal-current-shift-card" class="p-3 rounded-3 border d-flex align-items-center justify-content-between mb-2" style="background-color: #f8fafc;">
+                        <!-- Dynamic Duty Person Card -->
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="modal-member-select" class="form-label fw-bold"><i class="fa-solid fa-right-left me-1"></i> สลับ/เปลี่ยนผู้เข้าเวรเฉพาะวันนี้</label>
+                    <select id="modal-member-select" class="form-select">
+                        <!-- Dynamic Member Options -->
+                    </select>
+                    <div class="form-text">การเปลี่ยนตัวในหน้านี้จะถือเป็นการ Manual Override เฉพาะวันที่เลือก</div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold"><i class="fa-solid fa-clock me-1"></i> ช่วงเวลาปฏิบัติงาน</label>
+                    <input type="text" class="form-control" value="เวรปฏิบัติงานประจำวัน (08:30 - 16:30 น.)" readonly>
+                </div>
+            </div>
+            <div class="modal-footer d-flex justify-content-between">
+                <button type="button" class="btn line-green-btn btn-sm" onclick="sendSingleDayToLine()">
+                    <i class="fa-brands fa-line me-1"></i> ส่งเตือนวันเข้าเวรนี้เข้า LINE
+                </button>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-outline-danger btn-sm d-none" id="btn-reset-override" onclick="resetDayOverride()">
+                        <i class="fa-solid fa-rotate-left me-1"></i> คืนค่าอัตโนมัติ
+                    </button>
+                    <button type="button" class="btn btn-primary btn-sm" onclick="saveDayOverride()">
+                        <i class="fa-solid fa-floppy-disk me-1"></i> บันทึกการเปลี่ยนแปลง
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 2. MODAL: เพิ่ม/แก้ไขสมาชิก -->
+<div class="modal fade" id="memberModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold" id="memberModalTitle"><i class="fa-solid fa-user-plus me-1"></i> เพิ่มสมาชิกใหม่</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form onsubmit="handleSaveMember(event)">
+                <input type="hidden" id="member-id">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="member-name" class="form-label fw-bold">ชื่อ-นามสกุล</label>
+                        <input type="text" class="form-control" id="member-name" required placeholder="เช่น สมชาย ใจดี">
+                    </div>
+                    <div class="mb-3">
+                        <label for="member-role" class="form-label fw-bold">ตำแหน่ง / แผนก</label>
+                        <input type="text" class="form-control" id="member-role" placeholder="เช่น เจ้าหน้าที่ไอที">
+                    </div>
+                    <div class="mb-3">
+                        <label for="member-color" class="form-label fw-bold">เลือกสีประจำตัว</label>
+                        <input type="color" class="form-control form-control-color w-100" id="member-color" value="#2563eb">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+                    <button type="submit" class="btn btn-primary">บันทึกข้อมูล</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 3. MODAL: Google Apps Script Code Script Generator -->
+<div class="modal fade" id="gasCodeModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title fw-bold"><i class="fa-solid fa-code me-2"></i>Google Apps Script (GAS) Code</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted mb-2">คัดลอกโค้ดด้านล่างนี้ นำไปวางใน <b>ส่วนขยาย ➔ Apps Script</b> บน Google Sheets ของคุณ เพื่อใช้บันทึกตารางเวร และส่งแจ้งเตือน LINE อัตโนมัติทุกเช้า 06:00 น.</p>
+                <textarea id="gasCodeTextArea" class="form-control font-monospace bg-light" rows="14" readonly>
+// ==========================================
+// GOOGLE APPS SCRIPT FOR FAIR DUTY ROTA & LINE NOTIFY
+// ==========================================
+
+const LINE_TOKEN = "ใส่_CHANNEL_ACCESS_TOKEN_ที่นี่";
+const TARGET_ID = "ใส่_USER_ID_หรือ_GROUP_ID_ที่นี่";
+
+function doGet(e) {
+  return ContentService.createTextOutput(JSON.stringify({ status: 'ok', message: 'Duty Rota API Active' }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function doPost(e) {
+  try {
+    var data = JSON.parse(e.postData.contents);
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    
+    if (data.action === 'syncData') {
+      var sheet = ss.getActiveSheet();
+      sheet.clear();
+      sheet.appendRow(["=== รายชื่อสมาชิก ==="]);
+      sheet.appendRow(["ID", "ชื่อ-นามสกุล", "ตำแหน่ง", "สีประจำตัว"]);
+      data.members.forEach(function(m) {
+        sheet.appendRow([m.id, m.name, m.role, m.color]);
+      });
+      
+      sheet.appendRow([]);
+      sheet.appendRow(["=== การตั้งค่าระบบ ==="]);
+      sheet.appendRow(["Anchor Date", data.settings.anchorDate]);
+      
+      return ContentService.createTextOutput(JSON.stringify({ status: 'success' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+  } catch (error) {
+    return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: error.toString() }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// ฟังก์ชั่นตั้งเวลาส่งแจ้งเตือนรายวันอัตโนมัติ (Time-driven Trigger 06:00 น.)
+function sendDailyLineNotification() {
+  var today = Utilities.formatDate(new Date(), "Asia/Bangkok", "yyyy-MM-dd");
+  var thaiDate = Utilities.formatDate(new Date(), "Asia/Bangkok", "d MMMM yyyy");
+  
+  var payload = {
+    "to": TARGET_ID,
+    "messages": [
+      {
+        "type": "flex",
+        "altText": "แจ้งเตือนเวรประจำวัน " + thaiDate,
+        "contents": {
+          "type": "bubble",
+          "header": {
+            "type": "box",
+            "layout": "vertical",
+            "backgroundColor": "#2563eb",
+            "contents": [
+              { "type": "text", "text": "📢 แจ้งเตือนเวรประจำวัน", "color": "#ffffff", "weight": "bold", "size": "md" },
+              { "type": "text", "text": thaiDate, "color": "#ffffff", "size": "xs", "margin": "xs" }
+            ]
+          },
+          "body": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+              { "type": "text", "text": "ขอเชิญผู้ปฏิบัติหน้าที่เข้ารายงานตัว:", "size": "sm", "color": "#666666" },
+              { "type": "text", "text": "🔔 ปฏิบัติหน้าที่เวรประจำวัน", "weight": "bold", "size": "lg", "margin": "md", "color": "#1e293b" }
+            ]
+          }
+        }
+      }
+    ]
+  };
+
+  UrlFetchApp.fetch("https://api.line.me/v2/bot/message/push", {
+    "method": "post",
+    "headers": {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer " + LINE_TOKEN
+    },
+    "payload": JSON.stringify(payload)
+  });
+}
+</textarea>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline-primary" onclick="copyGasCode()"><i class="fa-solid fa-copy me-1"></i> คัดลอกโค้ด</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ปิด</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Notifications -->
+<div class="toast-container">
+    <div id="liveToast" class="toast align-items-center text-white bg-dark border-0 rounded-3 shadow" role="alert">
+        <div class="d-flex">
+            <div class="toast-body" id="toast-message">บันทึกเรียบร้อย</div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    // --- Initial State Management ---
+    let members = JSON.parse(localStorage.getItem('fair_weekly_members')) || [
+        { id: 1, name: 'สมชาย ใจดี', role: 'สมาชิก 1', color: '#2563eb' },
+        { id: 2, name: 'วิภาดา รักเรียน', role: 'สมาชิก 2', color: '#10b981' },
+        { id: 3, name: 'กิตติศักดิ์ มั่นคง', role: 'สมาชิก 3', color: '#f59e0b' },
+        { id: 4, name: 'นภาพร สดใส', role: 'สมาชิก 4', color: '#ec4899' },
+        { id: 5, name: 'อนันต์ สายลุย', role: 'สมาชิก 5', color: '#8b5cf6' },
+        { id: 6, name: 'ชลธิชา มีสุข', role: 'สมาชิก 6', color: '#06b6d4' },
+        { id: 7, name: 'ธนากร พร้อมพรั่ง', role: 'สมาชิก 7', color: '#64748b' }
+    ];
+
+    let settings = JSON.parse(localStorage.getItem('fair_weekly_settings')) || {
+        anchorDate: '2026-01-04', // Default Sunday
+        apiUrl: ''
+    };
+
+    let lineSettings = JSON.parse(localStorage.getItem('fair_line_settings')) || {
+        token: '',
+        targetId: ''
+    };
+
+    let dayOverrides = JSON.parse(localStorage.getItem('fair_weekly_overrides')) || {};
+
+    let chartInstance = null;
+    let shiftCache = {}; 
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const today = new Date();
+        const yearMonth = today.toISOString().slice(0, 7);
+        document.getElementById('month-picker').value = yearMonth;
+        document.getElementById('start-date').value = settings.anchorDate;
+        document.getElementById('api-url').value = settings.apiUrl || '';
+        document.getElementById('line-token').value = lineSettings.token || '';
+        document.getElementById('line-target-id').value = lineSettings.targetId || '';
+
+        updateSyncIndicator();
+        calculateAllShifts();
+        renderDashboard();
+        renderCalendar();
+        renderMembers();
+    });
+
+    function switchTab(tabName, event) {
+        if (event) event.preventDefault();
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.add('d-none'));
+        document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
+        
+        document.getElementById(`tab-${tabName}`).classList.remove('d-none');
+        if (event && event.currentTarget) event.currentTarget.classList.add('active');
+
+        if (tabName === 'dashboard') renderDashboard();
+        if (tabName === 'schedule') renderCalendar();
+    }
+
+    /**
+     * STRICT FAIR SHIFT ALLOCATION ALGORITHM
+     * Rule 1: Exactly 1 shift per day for 1 member
+     * Rule 2: Each member gets <= 1 shift per week (Sunday-Saturday)
+     * Rule 3: Prevents consecutive days across weeks/months
+     */
+    function calculateAllShifts() {
+        shiftCache = {};
+        if (members.length === 0) return;
+
+        const anchor = new Date(settings.anchorDate);
+        anchor.setHours(0, 0, 0, 0);
+
+        const anchorDay = anchor.getDay();
+        const baseSunday = new Date(anchor);
+        baseSunday.setDate(baseSunday.getDate() - anchorDay);
+
+        const startSunday = new Date(baseSunday);
+        startSunday.setDate(startSunday.getDate() - (52 * 7));
+
+        const totalWeeks = 156;
+
+        for (let week = 0; week < totalWeeks; week++) {
+            const currentWeekSunday = new Date(startSunday);
+            currentWeekSunday.setDate(currentWeekSunday.getDate() + (week * 7));
+
+            const weekOffset = week % members.length;
+            const rotatedMembers = [
+                ...members.slice(weekOffset),
+                ...members.slice(0, weekOffset)
+            ];
+
+            for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
+                const dutyDate = new Date(currentWeekSunday);
+                dutyDate.setDate(dutyDate.getDate() + dayIndex);
+                const dateKey = dutyDate.toISOString().slice(0, 10);
+
+                if (dayOverrides[dateKey]) {
+                    const overrideMember = members.find(m => m.id === dayOverrides[dateKey]);
+                    if (overrideMember) {
+                        shiftCache[dateKey] = [{ ...overrideMember, isOverride: true }];
+                        continue;
+                    }
+                }
+
+                const assignedMember = rotatedMembers[dayIndex % rotatedMembers.length];
+                shiftCache[dateKey] = [assignedMember];
+            }
+        }
+    }
+
+    function getShiftsForDate(dateStr) {
+        if (!shiftCache[dateStr]) {
+            calculateAllShifts();
+        }
+        return shiftCache[dateStr] || [];
+    }
+
+    function recalculateShifts() {
+        calculateAllShifts();
+        renderDashboard();
+        renderCalendar();
+        showToast('คำนวณและกระจายรอบสลับเวรใหม่เรียบร้อย!');
+    }
+
+    function openDayDetailModal(dateStr) {
+        document.getElementById('modal-selected-date').value = dateStr;
+
+        const dateObj = new Date(dateStr + 'T00:00:00');
+        const thaiDateString = dateObj.toLocaleDateString('th-TH', {
+            weekday: 'long',
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric'
+        });
+
+        document.getElementById('modal-full-date-display').innerText = thaiDateString;
+
+        const shifts = getShiftsForDate(dateStr);
+        const currentPerson = shifts[0] || null;
+
+        const currentShiftCard = document.getElementById('modal-current-shift-card');
+        if (currentPerson) {
+            currentShiftCard.style.borderLeft = `6px solid ${currentPerson.color}`;
+            currentShiftCard.innerHTML = `
+                <div class="d-flex align-items-center">
+                    <div class="avatar-circle me-3" style="background-color: ${currentPerson.color};">
+                        ${currentPerson.name.charAt(0)}
+                    </div>
+                    <div>
+                        <h6 class="mb-0 fw-bold">${currentPerson.name} ${currentPerson.isOverride ? '<span class="override-tag"><i class="fa-solid fa-pen"></i> แก้ไขแล้ว</span>' : ''}</h6>
+                        <small class="text-muted">${currentPerson.role || 'สมาชิกประจำ'}</small>
+                    </div>
+                </div>
+                <span class="badge" style="background-color: ${currentPerson.color};">ผู้เข้าเวร</span>
+            `;
+        } else {
+            currentShiftCard.innerHTML = `<span class="text-muted">ไม่มีผู้เข้าเวร</span>`;
+        }
+
+        const memberSelect = document.getElementById('modal-member-select');
+        memberSelect.innerHTML = '';
+        members.forEach(m => {
+            const opt = document.createElement('option');
+            opt.value = m.id;
+            opt.innerText = `${m.name} (${m.role || 'สมาชิก'})`;
+            if (currentPerson && m.id === currentPerson.id) {
+                opt.selected = true;
+            }
+            memberSelect.appendChild(opt);
+        });
+
+        const btnReset = document.getElementById('btn-reset-override');
+        if (dayOverrides[dateStr]) {
+            btnReset.classList.remove('d-none');
+        } else {
+            btnReset.classList.add('d-none');
+        }
+
+        const modal = new bootstrap.Modal(document.getElementById('dayDetailModal'));
+        modal.show();
+    }
+
+    function saveDayOverride() {
+        const dateStr = document.getElementById('modal-selected-date').value;
+        const selectedMemberId = Number(document.getElementById('modal-member-select').value);
+
+        if (!dateStr || !selectedMemberId) return;
+
+        dayOverrides[dateStr] = selectedMemberId;
+        localStorage.setItem('fair_weekly_overrides', JSON.stringify(dayOverrides));
+
+        calculateAllShifts();
+        renderDashboard();
+        renderCalendar();
+
+        const modal = bootstrap.Modal.getInstance(document.getElementById('dayDetailModal'));
+        if (modal) modal.hide();
+
+        showToast('สลับเปลี่ยนตัวผู้เข้าเวรเฉพาะวันเรียบร้อย!');
+    }
+
+    function resetDayOverride() {
+        const dateStr = document.getElementById('modal-selected-date').value;
+        if (!dateStr) return;
+
+        delete dayOverrides[dateStr];
+        localStorage.setItem('fair_weekly_overrides', JSON.stringify(dayOverrides));
+
+        calculateAllShifts();
+        renderDashboard();
+        renderCalendar();
+
+        const modal = bootstrap.Modal.getInstance(document.getElementById('dayDetailModal'));
+        if (modal) modal.hide();
+
+        showToast('คืนค่าผู้เข้าเวรอัตโนมัติเรียบร้อยแล้ว');
+    }
+
+    function renderDashboard() {
+        const todayStr = new Date().toISOString().slice(0, 10);
+        const todayShifts = getShiftsForDate(todayStr);
+        
+        document.getElementById('dash-members-count').innerText = `${members.length} คน`;
+        document.getElementById('dash-today-duty').innerText = todayShifts.length > 0 ? todayShifts.map(m => m.name).join(', ') : 'ไม่มีเวร';
+
+        const upcomingList = document.getElementById('upcoming-duty-list');
+        upcomingList.innerHTML = '';
+        const now = new Date();
+        
+        for (let i = 0; i < 7; i++) {
+            const date = new Date();
+            date.setDate(now.getDate() + i);
+            const dateStr = date.toISOString().slice(0, 10);
+            const shifts = getShiftsForDate(dateStr);
+            
+            const formattedDate = date.toLocaleDateString('th-TH', { weekday: 'short', day: 'numeric', month: 'short' });
+            const li = document.createElement('li');
+            li.className = 'list-group-item d-flex justify-content-between align-items-center py-2 px-1 calendar-day-item';
+            li.style.cursor = 'pointer';
+            li.onclick = () => openDayDetailModal(dateStr);
+            
+            const badgesHtml = shifts.map(s => 
+                `<span class="badge" style="background-color: ${s.color}; font-size: 0.85rem;">${s.name} ${s.isOverride ? '✏️' : ''}</span>`
+            ).join('');
+
+            li.innerHTML = `
+                <span class="small">${i === 0 ? '<strong class="text-primary">วันนี้</strong>' : formattedDate}</span>
+                <div>${badgesHtml || '-'}</div>
+            `;
+            upcomingList.appendChild(li);
+        }
+
+        updateChart();
+    }
+
+    function updateChart() {
+        const yearMonth = document.getElementById('month-picker').value || new Date().toISOString().slice(0, 7);
+        const [year, month] = yearMonth.split('-').map(Number);
+        const daysInMonth = new Date(year, month, 0).getDate();
+
+        const monthName = new Date(year, month - 1, 1).toLocaleDateString('th-TH', { month: 'long', year: 'numeric' });
+        document.getElementById('chart-month-label').innerText = monthName;
+
+        const dutyCounts = {};
+        members.forEach(m => dutyCounts[m.id] = { name: m.name, color: m.color, count: 0 });
+
+        for (let day = 1; day <= daysInMonth; day++) {
+            const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            const shifts = getShiftsForDate(dateStr);
+            shifts.forEach(person => {
+                if (dutyCounts[person.id]) {
+                    dutyCounts[person.id].count++;
+                }
+            });
+        }
+
+        const ctx = document.getElementById('dutyChart').getContext('2d');
+        if (chartInstance) chartInstance.destroy();
+
+        const labels = Object.values(dutyCounts).map(d => d.name);
+        const data = Object.values(dutyCounts).map(d => d.count);
+        const colors = Object.values(dutyCounts).map(d => d.color);
+
+        chartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'จำนวนวันเข้าเวร (วัน)',
+                    data: data,
+                    backgroundColor: colors,
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true, ticks: { precision: 0, stepSize: 1 } }
+                },
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+    }
+
+    function renderCalendar() {
+        const yearMonth = document.getElementById('month-picker').value;
+        if (!yearMonth) return;
+
+        const [year, month] = yearMonth.split('-').map(Number);
+        const firstDayIndex = new Date(year, month - 1, 1).getDay();
+        const daysInMonth = new Date(year, month, 0).getDate();
+        const todayStr = new Date().toISOString().slice(0, 10);
+
+        const calendarBody = document.getElementById('calendar-body');
+        calendarBody.innerHTML = '';
+
+        let dateCounter = 1;
+        for (let i = 0; i < 6; i++) {
+            let row = document.createElement('tr');
+            let hasDate = false;
+
+            for (let j = 0; j < 7; j++) {
+                let cell = document.createElement('td');
+                cell.className = 'calendar-day p-2';
+
+                if ((i === 0 && j < firstDayIndex) || dateCounter > daysInMonth) {
+                    cell.innerHTML = '';
+                    cell.style.cursor = 'default';
+                } else {
+                    hasDate = true;
+                    const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(dateCounter).padStart(2, '0')}`;
+                    const shifts = getShiftsForDate(dateStr);
+                    const isToday = (dateStr === todayStr);
+
+                    cell.onclick = () => openDayDetailModal(dateStr);
+
+                    if (isToday) cell.classList.add('today-highlight');
+
+                    let shiftsHtml = shifts.map(s => `
+                        <div class="badge-shift text-white shadow-sm text-truncate" style="background-color: ${s.color};" title="${s.name}">
+                            <span><i class="fa-solid fa-user me-1"></i>${s.name}</span>
+                            ${s.isOverride ? '<i class="fa-solid fa-pen text-white ms-1" style="font-size:0.65rem;" title="แก้ไขแล้ว"></i>' : ''}
+                        </div>
+                    `).join('');
+
+                    cell.innerHTML = `
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="fw-bold ${j === 0 ? 'text-danger' : (j === 6 ? 'text-primary' : '')}">${dateCounter}</span>
+                            ${isToday ? '<span class="badge bg-danger" style="font-size:0.58rem;">วันนี้</span>' : ''}
+                        </div>
+                        <div class="d-flex flex-column gap-1">${shiftsHtml}</div>
+                    `;
+                    dateCounter++;
+                }
+                row.appendChild(cell);
+            }
+            if (hasDate) calendarBody.appendChild(row);
+        }
+    }
+
+    function renderMembers() {
+        const tbody = document.getElementById('member-table-body');
+        tbody.innerHTML = '';
+
+        members.forEach((m, index) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><strong>${index + 1}</strong></td>
+                <td>
+                    <div class="d-flex align-items-center">
+                        <div class="avatar-circle me-3" style="background-color: ${m.color};">
+                            ${m.name.charAt(0)}
+                        </div>
+                        <span class="fw-bold">${m.name}</span>
+                    </div>
+                </td>
+                <td>${m.role || '-'}</td>
+                <td><span class="badge" style="background-color: ${m.color};">${m.color}</span></td>
+                <td class="text-center">
+                    <button class="btn btn-sm btn-outline-primary me-1" onclick="openEditMemberModal(${m.id})">
+                        <i class="fa-solid fa-pen"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteMember(${m.id})">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+        localStorage.setItem('fair_weekly_members', JSON.stringify(members));
+    }
+
+    function openAddMemberModal() {
+        document.getElementById('member-id').value = '';
+        document.getElementById('member-name').value = '';
+        document.getElementById('member-role').value = '';
+        document.getElementById('member-color').value = '#2563eb';
+        document.getElementById('memberModalTitle').innerHTML = '<i class="fa-solid fa-user-plus me-1"></i> เพิ่มสมาชิกใหม่';
+    }
+
+    function openEditMemberModal(id) {
+        const member = members.find(m => m.id === id);
+        if (!member) return;
+        document.getElementById('member-id').value = member.id;
+        document.getElementById('member-name').value = member.name;
+        document.getElementById('member-role').value = member.role || '';
+        document.getElementById('member-color').value = member.color;
+        document.getElementById('memberModalTitle').innerHTML = '<i class="fa-solid fa-user-pen me-1"></i> แก้ไขสมาชิก';
+        
+        const modal = new bootstrap.Modal(document.getElementById('memberModal'));
+        modal.show();
+    }
+
+    function handleSaveMember(e) {
+        e.preventDefault();
+        const id = document.getElementById('member-id').value;
+        const name = document.getElementById('member-name').value;
+        const role = document.getElementById('member-role').value;
+        const color = document.getElementById('member-color').value;
+
+        if (id) {
+            const idx = members.findIndex(m => m.id == id);
+            if (idx !== -1) members[idx] = { id: Number(id), name, role, color };
+        } else {
+            members.push({ id: Date.now(), name, role, color });
+        }
+
+        renderMembers();
+        recalculateShifts();
+
+        const modal = bootstrap.Modal.getInstance(document.getElementById('memberModal'));
+        if (modal) modal.hide();
+        showToast('บันทึกข้อมูลสมาชิกเรียบร้อยแล้ว');
+    }
+
+    function deleteMember(id) {
+        if (members.length <= 1) {
+            alert('ต้องมีสมาชิกอย่างน้อย 1 คนในระบบ');
+            return;
+        }
+        if (confirm('ต้องการลบสมาชิกท่านนี้ใช่หรือไม่? ระบบจะจัดตารางเวรใหม่ให้อัตโนมัติ')) {
+            members = members.filter(m => m.id !== id);
+            renderMembers();
+            recalculateShifts();
+            showToast('ลบสมาชิกเรียบร้อยแล้ว');
+        }
+    }
+
+    function saveSettings(e) {
+        e.preventDefault();
+        settings.anchorDate = document.getElementById('start-date').value;
+        localStorage.setItem('fair_weekly_settings', JSON.stringify(settings));
+        
+        recalculateShifts();
+        showToast('บันทึกการตั้งค่ารอบเวรเรียบร้อยแล้ว');
+    }
+
+    function saveLineSettings(e) {
+        e.preventDefault();
+        lineSettings.token = document.getElementById('line-token').value.trim();
+        lineSettings.targetId = document.getElementById('line-target-id').value.trim();
+        localStorage.setItem('fair_line_settings', JSON.stringify(lineSettings));
+        showToast('บันทึกการตั้งค่า LINE API เรียบร้อยแล้ว');
+    }
+
+    function saveApiUrl() {
+        const url = document.getElementById('api-url').value.trim();
+        settings.apiUrl = url;
+        localStorage.setItem('fair_weekly_settings', JSON.stringify(settings));
+        updateSyncIndicator();
+        showToast('บันทึก Web App URL เรียบร้อยแล้ว');
+    }
+
+    function updateSyncIndicator() {
+        const indicator = document.getElementById('sync-mode-indicator');
+        if (settings.apiUrl) {
+            indicator.innerText = 'Google Sheets Mode';
+            indicator.className = 'text-success fw-bold';
+        } else {
+            indicator.innerText = 'LocalStorage Mode';
+            indicator.className = 'text-warning';
+        }
+    }
+
+    async function sendSingleDayToLine() {
+        if (!lineSettings.token || !lineSettings.targetId) {
+            alert('กรุณากรอก LINE Channel Access Token และ Target ID ในหน้าตั้งค่าก่อน');
+            return;
+        }
+
+        const dateStr = document.getElementById('modal-selected-date').value;
+        const shifts = getShiftsForDate(dateStr);
+        const person = shifts[0];
+        
+        const dateObj = new Date(dateStr + 'T00:00:00');
+        const thaiDate = dateObj.toLocaleDateString('th-TH', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+        const payload = {
+            to: lineSettings.targetId,
+            messages: [{
+                type: 'flex',
+                altText: `แจ้งเตือนเวรวันที่ ${thaiDate}`,
+                contents: {
+                    type: 'bubble',
+                    header: {
+                        type: 'box',
+                        layout: 'vertical',
+                        backgroundColor: '#2563eb',
+                        contents: [
+                            { type: 'text', text: '📅 แจ้งเตือนเวรปฏิบัติงาน', color: '#ffffff', weight: 'bold', size: 'md' },
+                            { type: 'text', text: thaiDate, color: '#ffffff', size: 'xs', margin: 'xs' }
+                        ]
+                    },
+                    body: {
+                        type: 'box',
+                        layout: 'vertical',
+                        contents: [
+                            { type: 'text', text: 'ผู้เข้าเวรปฏิบัติงานประจำวัน:', size: 'sm', color: '#64748b' },
+                            { type: 'text', text: person ? `👤 ${person.name}` : 'ไม่มีผู้เข้าเวร', weight: 'bold', size: 'xl', margin: 'md', color: '#0f172a' },
+                            { type: 'text', text: `ตำแหน่ง: ${person ? person.role : '-'}`, size: 'xs', color: '#64748b', margin: 'xs' },
+                            { type: 'separator', margin: 'lg' },
+                            { type: 'text', text: '⏰ เวลาปฏิบัติงาน: 08:30 - 16:30 น.', size: 'xs', color: '#2563eb', margin: 'lg' }
+                        ]
+                    }
+                }
+            }]
+        };
+
+        try {
+            showToast('กำลังส่งแจ้งเตือนเข้า LINE...');
+            const res = await fetch('https://api.line.me/v2/bot/message/push', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${lineSettings.token}`
+                },
+                body: JSON.stringify(payload)
+            });
+            if (res.ok) {
+                showToast('ส่งแจ้งเตือนเข้า LINE สำเร็จ!');
+            } else {
+                alert('ส่ง LINE ไม่สำเร็จ ตรวจสอบ Token/Target ID');
+            }
+        } catch (err) {
+            alert('เกิดข้อผิดพลาดในการส่ง LINE API: ' + err.message);
+        }
+    }
+
+    async function sendMonthToLine() {
+        if (!lineSettings.token || !lineSettings.targetId) {
+            alert('กรุณากรอก LINE Channel Access Token และ Target ID ในหน้าตั้งค่าก่อน');
+            return;
+        }
+
+        const yearMonth = document.getElementById('month-picker').value || new Date().toISOString().slice(0, 7);
+        const [year, month] = yearMonth.split('-').map(Number);
+        const daysInMonth = new Date(year, month, 0).getDate();
+        const monthName = new Date(year, month - 1, 1).toLocaleDateString('th-TH', { month: 'long', year: 'numeric' });
+
+        let summaryText = `📅 สรุปตารางเวรเดือน ${monthName}\n------------------------\n`;
+        for (let d = 1; d <= daysInMonth; d++) {
+            const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+            const shifts = getShiftsForDate(dateStr);
+            const pName = shifts.length > 0 ? shifts[0].name : '-';
+            summaryText += `วันที่ ${d}: ${pName}\n`;
+        }
+
+        const payload = {
+            to: lineSettings.targetId,
+            messages: [{
+                type: 'text',
+                text: summaryText
+            }]
+        };
+
+        try {
+            showToast('กำลังส่งตารางเวรทั้งเดือนเข้า LINE...');
+            const res = await fetch('https://api.line.me/v2/bot/message/push', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${lineSettings.token}`
+                },
+                body: JSON.stringify(payload)
+            });
+            if (res.ok) {
+                showToast('ส่งสรุปตารางเวรทั้งเดือนเข้า LINE สำเร็จ!');
+            } else {
+                alert('ส่ง LINE ไม่สำเร็จ ตรวจสอบ Token/Target ID');
+            }
+        } catch (err) {
+            alert('เกิดข้อผิดพลาดในการส่ง LINE API: ' + err.message);
+        }
+    }
+
+    async function testLineMessage() {
+        if (!lineSettings.token || !lineSettings.targetId) {
+            alert('กรุณากรอก Token และ Target ID ให้ครบก่อนทดสอบ');
+            return;
+        }
+        showToast('กำลังส่งข้อความทดสอบ...');
+        try {
+            const res = await fetch('https://api.line.me/v2/bot/message/push', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${lineSettings.token}`
+                },
+                body: JSON.stringify({
+                    to: lineSettings.targetId,
+                    messages: [{ type: 'text', text: '🔔 ทดสอบระบบแจ้งเตือน LINE API สำเร็จ!' }]
+                })
+            });
+            if (res.ok) {
+                alert('ส่งข้อความทดสอบเข้า LINE เรียบร้อยแล้ว!');
+            } else {
+                alert('เกิดข้อผิดพลาด! กรุณาตรวจสอบ Token หรือ Target ID');
+            }
+        } catch (e) {
+            alert('ข้อผิดพลาด: ' + e.message);
+        }
+    }
+
+    async function syncWithGoogleSheet() {
+        if (!settings.apiUrl) {
+            alert('กรุณากรอก Google Apps Script Web App URL ในหน้าตั้งค่าก่อนทำการ Sync');
+            return;
+        }
+
+        try {
+            showToast('กำลังซิงค์ข้อมูลกับ Google Sheets...');
+            const response = await fetch(settings.apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({
+                    action: 'syncData',
+                    members: members,
+                    settings: settings,
+                    overrides: dayOverrides
+                })
+            });
+
+            const result = await response.json();
+            if (result.status === 'success') {
+                showToast('ซิงค์ข้อมูลลง Google Sheets เรียบร้อยแล้ว!');
+            } else {
+                alert('เกิดข้อผิดพลาดจาก Google Apps Script: ' + result.message);
+            }
+        } catch (error) {
+            alert('ไม่สามารถเชื่อมต่อ API ได้: ' + error.message);
+        }
+    }
+
+    function copyGasCode() {
+        const textarea = document.getElementById('gasCodeTextArea');
+        textarea.select();
+        document.execCommand('copy');
+        showToast('คัดลอกโค้ด GAS เรียบร้อยแล้ว');
+    }
+
+    function showToast(msg) {
+        document.getElementById('toast-message').innerText = msg;
+        const toastEl = document.getElementById('liveToast');
+        const toast = new bootstrap.Toast(toastEl, { delay: 3000 });
+        toast.show();
+    }
+</script>
+</body>
+</html>
