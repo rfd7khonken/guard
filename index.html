@@ -143,6 +143,25 @@
             background-color: #05b34c;
             color: white;
         }
+        /* Login Screen Styling */
+        #login-screen {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 55%, #065f46 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .login-card {
+            max-width: 440px;
+            width: 100%;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.45);
+        }
+        .admin-only.d-none-role {
+            display: none !important;
+        }
         /* Official Print Form Styling */
         .official-doc {
             font-family: 'Sarabun', sans-serif;
@@ -195,7 +214,57 @@
 </head>
 <body>
 
-<div class="container-fluid">
+<!-- ==================== LOGIN SCREEN ==================== -->
+<div id="login-screen">
+    <div class="card login-card bg-white border-0">
+        <div class="bg-dark text-white text-center p-4" style="background: linear-gradient(135deg, #0f172a 0%, #1e40af 100%);">
+            <div class="bg-success bg-opacity-25 border border-success rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 68px; height: 68px;">
+                <i class="fa-solid fa-tree fa-2x text-warning"></i>
+            </div>
+            <h4 class="fw-bold mb-1">ศูนย์ป่าไม้ขอนแก่น</h4>
+            <p class="small text-info mb-0">ระบบบริหารจัดการตารางเวรยาม (กลางวัน / กลางคืน)</p>
+        </div>
+        <div class="card-body p-4">
+            <form onsubmit="handleLogin(event)">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small text-muted">ชื่อผู้ใช้งาน (Username)</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light"><i class="fa-solid fa-user text-primary"></i></span>
+                        <input type="text" id="login-username" class="form-control" placeholder="กรอกชื่อผู้ใช้งาน" required autofocus>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small text-muted">รหัสผ่าน (Password)</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light"><i class="fa-solid fa-lock text-primary"></i></span>
+                        <input type="password" id="login-password" class="form-control" placeholder="กรอกรหัสผ่าน" required>
+                        <button class="btn btn-outline-secondary" type="button" onclick="toggleLoginPassword()">
+                            <i class="fa-solid fa-eye" id="login-eye-icon"></i>
+                        </button>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary w-100 py-2 fw-bold shadow-sm mb-3">
+                    <i class="fa-solid fa-right-to-bracket me-2"></i>เข้าสู่ระบบ
+                </button>
+            </form>
+
+            <div class="p-3 rounded-3 bg-light border small">
+                <div class="fw-bold text-dark mb-2"><i class="fa-solid fa-circle-info text-primary me-1"></i> บัญชีทดสอบเข้าใช้งาน:</div>
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span><span class="badge bg-danger me-1">Admin</span> <b>admin</b> / <code>admin1234</code></span>
+                    <button type="button" class="btn btn-xs btn-outline-primary py-0 px-2" style="font-size:0.72rem;" onclick="fillDemoLogin('admin','admin1234')">ใช้บัญชีนี้</button>
+                </div>
+                <div class="d-flex justify-content-between align-items-center">
+                    <span><span class="badge bg-info text-dark me-1">Viewer</span> <b>user</b> / <code>user1234</code></span>
+                    <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-2" style="font-size:0.72rem;" onclick="fillDemoLogin('user','user1234')">ใช้บัญชีนี้</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== MAIN APP SHELL ==================== -->
+<div id="main-app-shell" class="container-fluid d-none">
     <div class="row">
         <!-- Sidebar Navigation -->
         <div class="col-md-3 col-lg-2 sidebar p-3 collapse d-md-block no-print" id="sidebarMenu">
@@ -211,33 +280,38 @@
             <hr class="text-secondary opacity-25">
             <ul class="nav nav-pills flex-column mb-auto">
                 <li class="nav-item">
-                    <a href="#" class="nav-link active" onclick="switchTab('schedule', event)">
+                    <a href="#" class="nav-link active" id="nav-schedule" onclick="switchTab('schedule', event)">
                         <i class="fa-solid fa-calendar-days me-2"></i> ปฏิทินเวร (กลางวัน/คืน)
                     </a>
                 </li>
                 <li>
-                    <a href="#" class="nav-link" onclick="switchTab('dashboard', event)">
+                    <a href="#" class="nav-link" id="nav-dashboard" onclick="switchTab('dashboard', event)">
                         <i class="fa-solid fa-chart-pie me-2"></i> Dashboard & สถิติ
                     </a>
                 </li>
                 <li>
-                    <a href="#" class="nav-link" onclick="switchTab('official', event)">
+                    <a href="#" class="nav-link" id="nav-official" onclick="switchTab('official', event)">
                         <i class="fa-solid fa-file-lines me-2"></i> แบบฟอร์มคำสั่งราชการ
                     </a>
                 </li>
-                <li>
-                    <a href="#" class="nav-link" onclick="switchTab('members', event)">
+                <li class="admin-only">
+                    <a href="#" class="nav-link" id="nav-members" onclick="switchTab('members', event)">
                         <i class="fa-solid fa-users me-2"></i> จัดการสมาชิก & วันหยุด
                     </a>
                 </li>
-                <li>
-                    <a href="#" class="nav-link" onclick="switchTab('settings', event)">
-                        <i class="fa-solid fa-sliders me-2"></i> ตั้งค่า & LINE / GAS
+                <li class="admin-only">
+                    <a href="#" class="nav-link" id="nav-logs" onclick="switchTab('logs', event)">
+                        <i class="fa-solid fa-clock-rotate-left me-2"></i> ประวัติการใช้งาน (Logs)
+                    </a>
+                </li>
+                <li class="admin-only">
+                    <a href="#" class="nav-link" id="nav-settings" onclick="switchTab('settings', event)">
+                        <i class="fa-solid fa-sliders me-2"></i> ตั้งค่า & ผู้ใช้งาน/API
                     </a>
                 </li>
             </ul>
             <hr class="text-secondary opacity-25">
-            <div class="p-3 bg-dark rounded-3 small">
+            <div class="p-3 bg-dark rounded-3 small mb-2">
                 <div class="text-warning mb-1"><i class="fa-solid fa-sun me-1"></i> กลางวัน: 08.30-16.30</div>
                 <div class="text-info mb-2"><i class="fa-solid fa-moon me-1"></i> กลางคืน: 16.30-08.30</div>
                 <div class="border-top border-secondary pt-2 text-center">
@@ -247,14 +321,26 @@
         </div>
 
         <!-- Main Content Area -->
-        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-3">
             
-            <!-- Mobile Header -->
-            <div class="d-md-none d-flex justify-content-between align-items-center mb-3 p-3 bg-white rounded-3 shadow-sm no-print">
-                <h6 class="mb-0 fw-bold text-primary"><i class="fa-solid fa-tree me-2"></i>ตารางเวรศูนย์ป่าไม้ขอนแก่น</h6>
-                <button class="btn btn-primary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu">
-                    <i class="fa-solid fa-bars"></i> เมนู
-                </button>
+            <!-- Top User Bar (Desktop & Mobile) -->
+            <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 p-2 px-3 bg-white rounded-3 shadow-sm no-print gap-2">
+                <div class="d-flex align-items-center gap-2">
+                    <button class="btn btn-primary btn-sm d-md-none" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu">
+                        <i class="fa-solid fa-bars"></i>
+                    </button>
+                    <span class="fw-bold text-dark small d-none d-sm-inline"><i class="fa-solid fa-shield-halved text-primary me-1"></i>ระบบบริหารจัดการเวรยาม ศูนย์ป่าไม้ขอนแก่น</span>
+                </div>
+                <div class="d-flex align-items-center gap-2 ms-auto">
+                    <div class="text-end lh-1">
+                        <div class="fw-bold small text-dark" id="topbar-user-display">-</div>
+                        <small class="text-muted" style="font-size: 0.7rem;" id="topbar-username">@-</small>
+                    </div>
+                    <span class="badge" id="topbar-role-badge">Role</span>
+                    <button class="btn btn-outline-danger btn-sm ms-1" onclick="handleLogout()" title="ออกจากระบบ">
+                        <i class="fa-solid fa-right-from-bracket me-1"></i> ออกจากระบบ
+                    </button>
+                </div>
             </div>
 
             <!-- TAB 1: CALENDAR SCHEDULE (DEFAULT VIEW) -->
@@ -262,20 +348,20 @@
                 <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
                     <div>
                         <h3 class="fw-bold mb-1"><i class="fa-solid fa-calendar-days text-primary me-2"></i>ตารางเวรประจำเดือน (กลางวัน - กลางคืน)</h3>
-                        <p class="text-muted small mb-0">คลิกที่วันที่ใดก็ได้เพื่อดูเบอร์โทรศัพท์ แก้ไขสลับเวร หรือส่งแจ้งเตือน LINE ทันที</p>
+                        <p class="text-muted small mb-0" id="calendar-helper-text">คลิกที่วันที่ใดก็ได้เพื่อดูเบอร์โทรศัพท์ แก้ไขสลับเวร หรือส่งแจ้งเตือน LINE ทันที</p>
                     </div>
                     <div class="d-flex flex-wrap align-items-center gap-2">
                         <div class="input-group input-group-sm" style="width: auto;">
                             <span class="input-group-text fw-bold bg-white">เดือน/ปี:</span>
                             <input type="month" id="month-picker" class="form-control" value="2026-11" onchange="onMonthChange()">
                         </div>
-                        <button class="btn btn-primary btn-sm" onclick="autoGenerateCurrentMonth()" title="คำนวณจัดเวรอัตโนมัติสำหรับเดือนที่เลือก">
+                        <button class="btn btn-primary btn-sm admin-only" onclick="autoGenerateCurrentMonth()" title="คำนวณจัดเวรอัตโนมัติสำหรับเดือนที่เลือก">
                             <i class="fa-solid fa-wand-magic-sparkles me-1"></i> จัดเวรอัตโนมัติ
                         </button>
-                        <button class="btn btn-outline-secondary btn-sm" onclick="resetToOrder10()" title="โหลดข้อมูลตามคำสั่งที่ 10/2569 (พ.ย. 2569)">
+                        <button class="btn btn-outline-secondary btn-sm admin-only" onclick="resetToOrder10()" title="โหลดข้อมูลตามคำสั่งที่ 10/2569 (พ.ย. 2569)">
                             <i class="fa-solid fa-rotate-left me-1"></i> ข้อมูลคำสั่ง 10/2569
                         </button>
-                        <button class="btn line-green-btn btn-sm" onclick="sendMonthSummaryToLine()">
+                        <button class="btn line-green-btn btn-sm admin-only" onclick="sendMonthSummaryToLine()">
                             <i class="fa-brands fa-line me-1"></i> ส่งตารางเดือนนี้
                         </button>
                     </div>
@@ -331,7 +417,7 @@
                         <h3 class="fw-bold mb-1"><i class="fa-solid fa-chart-pie text-primary me-2"></i>Dashboard & สถิติการเข้าเวร</h3>
                         <p class="text-muted small mb-0" id="dash-subtitle">สรุปความเท่าเทียมการเข้าเวรประจำเดือน พฤศจิกายน 2569</p>
                     </div>
-                    <button class="btn btn-success btn-sm" onclick="syncWithGoogleSheet()">
+                    <button class="btn btn-success btn-sm admin-only" onclick="syncWithGoogleSheet()">
                         <i class="fa-solid fa-cloud-arrow-up me-1"></i> Sync ข้อมูลลง Google Sheets
                     </button>
                 </div>
@@ -352,6 +438,42 @@
                     </div>
                     <div class="col-12 col-sm-6 col-xl-3">
                         <div class="card p-3 border-start border-4 border-primary">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="text-muted small">ชุดเวรกลางคืน (ทุกวัน)</div>
+                                    <div class="fs-4 fw-bold text-dark" id="kpi-night-members">7 คน</div>
+                                    <small class="text-primary fw-semibold">เวลา 16.30 - 08.30 น.</small>
+                                </div>
+                                <i class="fa-solid fa-moon fa-2x text-primary opacity-75"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-sm-6 col-xl-3">
+                        <div class="card p-3 border-start border-4 border-danger">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="text-muted small">วันหยุดราชการในเดือน</div>
+                                    <div class="fs-4 fw-bold text-dark" id="kpi-holiday-days">9 วัน</div>
+                                    <small class="text-danger fw-semibold">เสาร์-อาทิตย์ & นักขัตฤกษ์</small>
+                                </div>
+                                <i class="fa-solid fa-calendar-check fa-2x text-danger opacity-75"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-sm-6 col-xl-3">
+                        <div class="card p-3 border-start border-4 border-success">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="text-muted small">เวรกลางคืนวันนี้ (18 พ.ย.)</div>
+                                    <div class="fs-6 fw-bold text-dark text-truncate" id="kpi-today-duty">-</div>
+                                    <small class="text-success fw-semibold">สถานะพร้อมปฏิบัติงาน</small>
+                                </div>
+                                <i class="fa-solid fa-user-shield fa-2x text-success opacity-75"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Dual Charts & Summary Table -->
                 <div class="row g-4 mb-4">
                     <div class="col-lg-6">
@@ -416,12 +538,52 @@
                         <p class="text-muted small mb-0">รูปแบบเดียวกับคำสั่งศูนย์ป่าไม้ขอนแก่น ใช้เลขไทยครบถ้วน พร้อมสั่งพิมพ์หรือบันทึกเป็น PDF</p>
                     </div>
                     <div class="d-flex flex-wrap gap-2">
-                        <input type="text" id="quick-order-input" class="form-control form-control-sm" style="width: 340px;" onchange="updateOrderRefFromDoc(this.value)">
+                        <input type="text" id="quick-order-input" class="form-control form-control-sm admin-only" style="width: 340px;" onchange="updateOrderRefFromDoc(this.value)">
                         <button class="btn btn-primary btn-sm" onclick="window.print()">
                             <i class="fa-solid fa-print me-1"></i> พิมพ์ / บันทึก PDF
                         </button>
                     </div>
                 </div>
+
+                <div id="printable-area" class="official-doc shadow-sm">
+                    <!-- Part 1: Day Shift Official Table -->
+                    <div class="text-center mb-2">
+                        <h5 class="fw-bold mb-1" id="doc-day-title">บัญชีรายชื่อผู้อยู่เวรยาม (เวลากลางวัน วันหยุดราชการ) ประจำเดือน พฤศจิกายน ๒๕๖๙</h5>
+                        <div class="fw-bold" id="doc-order-ref">คำสั่งศูนย์ป่าไม้ขอนแก่น ที่ ๑๐ /๒๕๖๙ ลงวันที่ ๓๐ ตุลาคม พ.ศ. ๒๕๖๙</div>
+                    </div>
+                    <table class="mb-4">
+                        <thead>
+                            <tr>
+                                <th style="width: 60px;">ลำดับ<br>ที่</th>
+                                <th>ชื่อผู้อยู่เวร<br>(เวลา ๐๘.๓๐-๑๖.๓๐ น.)</th>
+                                <th>อยู่เวร<br>วันที่</th>
+                                <th style="width: 170px;">หมายเลข<br>เบอร์โทรศัพท์</th>
+                                <th style="width: 110px;">หมายเหตุ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="official-day-tbody"></tbody>
+                    </table>
+
+                    <!-- Part 2: Night Shift Official Table -->
+                    <div class="text-center mb-2 mt-4 pt-2">
+                        <h5 class="fw-bold mb-1" id="doc-night-title">บัญชีรายชื่อผู้อยู่เวรยาม (เวลากลางคืน) ประจำเดือน พฤศจิกายน ๒๕๖๙</h5>
+                        <div class="fw-bold" id="doc-night-order-ref">คำสั่งศูนย์ป่าไม้ขอนแก่น ที่ ๑๐ /๒๕๖๙ ลงวันที่ ๓๐ ตุลาคม พ.ศ. ๒๕๖๙</div>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 60px;">ลำดับ<br>ที่</th>
+                                <th>ชื่อผู้อยู่เวร<br>(เวลา ๑๖.๓๐-๐๘.๓๐ น.)</th>
+                                <th>อยู่เวร<br>วันที่</th>
+                                <th style="width: 170px;">หมายเลข<br>เบอร์โทรศัพท์</th>
+                                <th style="width: 110px;">หมายเหตุ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="official-night-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+
             <!-- TAB 4: MEMBER MANAGEMENT & HOLIDAYS -->
             <div id="tab-members" class="tab-content d-none">
                 <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
@@ -501,72 +663,103 @@
                 </div>
             </div>
 
-            <!-- TAB 4: MEMBER MANAGEMENT -->
-            <div id="tab-members" class="tab-content d-none">
+            <!-- TAB 5: ACTIVITY LOGS (ADMIN ONLY) -->
+            <div id="tab-logs" class="tab-content d-none">
                 <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
                     <div>
-                        <h3 class="fw-bold mb-1"><i class="fa-solid fa-users text-primary me-2"></i>จัดการรายชื่อเจ้าหน้าที่อยู่เวร</h3>
-                        <p class="text-muted small mb-0">แยกชุดปฏิบัติงานระหว่าง <b>เวรกลางวัน (วันหยุดราชการ)</b> และ <b>เวรกลางคืน (ทุกวัน)</b></p>
+                        <h3 class="fw-bold mb-1"><i class="fa-solid fa-clock-rotate-left text-primary me-2"></i>ประวัติการใช้งานระบบ (Activity Logs)</h3>
+                        <p class="text-muted small mb-0">บันทึกการเข้า-ออกจากระบบ การแก้ไขเวร การจัดการรายชื่อ และการแจ้งเตือนทั้งหมด</p>
                     </div>
-                    <button class="btn btn-primary" onclick="openMemberModal()">
-                        <i class="fa-solid fa-user-plus me-1"></i> เพิ่มรายชื่อเจ้าหน้าที่
-                    </button>
+                    <div class="d-flex flex-wrap gap-2">
+                        <button class="btn btn-success btn-sm" onclick="exportLogsCSV()">
+                            <i class="fa-solid fa-file-csv me-1"></i> ส่งออกไฟล์ CSV
+                        </button>
+                        <button class="btn btn-outline-danger btn-sm" onclick="clearLocalLogs()">
+                            <i class="fa-solid fa-trash-can me-1"></i> ล้างประวัติในเครื่อง
+                        </button>
+                    </div>
                 </div>
 
-                <div class="row g-4">
-                    <!-- Day Shift Members -->
-                    <div class="col-lg-6">
-                        <div class="card p-3 border-top border-4 border-warning">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h5 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-sun text-warning me-2"></i>ชุดเวรกลางวัน (08.30 - 16.30 น.)</h5>
-                                <span class="badge bg-warning text-dark" id="badge-day-count">8 คน</span>
+                <!-- Log Filters -->
+                <div class="card p-3 mb-3">
+                    <div class="row g-2 align-items-center">
+                        <div class="col-md-6">
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text bg-white"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+                                <input type="text" id="log-search-input" class="form-control" placeholder="ค้นหาชื่อผู้ใช้, รายละเอียดการแก้ไข, วันที่..." oninput="renderLogsTable()">
                             </div>
-                            <div class="table-responsive">
-                                <table class="table table-hover align-middle mb-0">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th style="width: 50px;">ที่</th>
-                                            <th>ชื่อ-นามสกุล</th>
-                                            <th>เบอร์โทรศัพท์</th>
-                                            <th class="text-center">จัดการ</th>
-                                        </tr>
-                                    </thead>
-                    <!-- Day Shift Section -->
-                <div id="modal-day-shift-box" class="p-3 rounded-3 mb-3 border border-warning" style="background-color: #fffbeb;">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span class="fw-bold text-warning-emphasis"><i class="fa-solid fa-sun text-warning me-1"></i> เวรกลางวัน (08.30 - 16.30 น.)</span>
-                        <span class="badge bg-warning text-dark" id="modal-holiday-badge">วันหยุดราชการ</span>
-                    </div>
-                    <select id="modal-day-select" class="form-select form-select-sm mb-2"></select>
-                    <div class="d-flex justify-content-between align-items-center small text-muted">
-                        <span id="modal-day-phone"><i class="fa-solid fa-phone me-1"></i> เบอร์โทร: -</span>
-                        <a id="modal-day-call" href="#" class="btn btn-outline-warning btn-sm py-0 px-2 text-dark d-none"><i class="fa-solid fa-phone-volume me-1"></i>โทรออก</a>
+                        </div>
+                        <div class="col-md-4">
+                            <select id="log-action-filter" class="form-select form-select-sm" onchange="renderLogsTable()">
+                                <option value="ALL">ทุกประเภทกิจกรรม (All Actions)</option>
+                                <option value="LOGIN">เข้าสู่ระบบ (LOGIN)</option>
+                                <option value="LOGOUT">ออกจากระบบ (LOGOUT)</option>
+                                <option value="EDIT_SHIFT">แก้ไข/สลับเวร (EDIT_SHIFT)</option>
+                                <option value="GENERATE_SHIFT">จัดเวรอัตโนมัติ (GENERATE_SHIFT)</option>
+                                <option value="MEMBER_MANAGE">จัดการสมาชิก (MEMBER_MANAGE)</option>
+                                <option value="HOLIDAY_MANAGE">จัดการวันหยุด (HOLIDAY_MANAGE)</option>
+                                <option value="LINE_NOTIFY">แจ้งเตือน LINE (LINE_NOTIFY)</option>
+                                <option value="SETTINGS">ตั้งค่า/บัญชีผู้ใช้ (SETTINGS)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2 text-md-end small text-muted">
+                            ทั้งหมด <b id="log-total-count">0</b> รายการ
+                        </div>
                     </div>
                 </div>
 
-                <div id="modal-workday-notice" class="alert alert-secondary py-2 px-3 small mb-3 d-none">
-                    <i class="fa-solid fa-building me-1"></i> <b>วันทำการปกติ:</b> ไม่มีเวรกลางวัน (เปิดสวิตช์ "วันหยุดราชการ" ด้านบนหากเป็นวันหยุดนักขัตฤกษ์)
-                </div>
-
-                <!-- Night Shift Section -->
-                <div class="p-3 rounded-3 border border-primary" style="background-color: #eef2ff;">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span class="fw-bold text-primary-emphasis"><i class="fa-solid fa-moon text-primary me-1"></i> เวรกลางคืน (16.30 - 08.30 น.)</span>
-                        <span class="badge bg-primary">ทุกวัน</span>
-                    </div>
-                    <select id="modal-night-select" class="form-select form-select-sm mb-2"></select>
-                    <div class="d-flex justify-content-between align-items-center small text-muted">
-                        <span id="modal-night-phone"><i class="fa-solid fa-phone me-1"></i> เบอร์โทร: -</span>
-                        <a id="modal-night-call" href="#" class="btn btn-outline-primary btn-sm py-0 px-2 d-none"><i class="fa-solid fa-phone-volume me-1"></i>โทรออก</a>
+                <!-- Logs Table -->
+                <div class="card p-3">
+                    <div class="table-responsive" style="max-height: 540px;">
+                        <table class="table table-hover table-sm align-middle mb-0">
+                            <thead class="table-dark sticky-top">
+                                <tr>
+                                    <th style="width: 165px;">วัน-เวลา (พ.ศ.)</th>
+                                    <th style="width: 180px;">ผู้ใช้งาน</th>
+                                    <th style="width: 145px;">กิจกรรม</th>
+                                    <th>รายละเอียดการดำเนินการ</th>
+                                    <th class="text-center" style="width: 115px;">สถานะซิงค์</th>
+                                </tr>
+                            </thead>
+                            <tbody id="logs-tbody"></tbody>
+                        </table>
                     </div>
                 </div>
             </div>
 
-            <!-- TAB 5: SETTINGS & LINE / GOOGLE APPS SCRIPT -->
+            <!-- TAB 6: SETTINGS & USER ACCOUNTS / LINE / GOOGLE APPS SCRIPT -->
             <div id="tab-settings" class="tab-content d-none">
-                <h3 class="fw-bold mb-4"><i class="fa-solid fa-sliders text-primary me-2"></i>ตั้งค่าระบบ LINE Messaging API & Google Sheets</h3>
+                <h3 class="fw-bold mb-4"><i class="fa-solid fa-sliders text-primary me-2"></i>ตั้งค่าระบบ บัญชีผู้ใช้ LINE API & Google Sheets</h3>
                 
                 <div class="row g-4">
+                    <!-- User Accounts Management (RBAC) -->
+                    <div class="col-12">
+                        <div class="card p-4 border-top border-4 border-dark">
+                            <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+                                <div>
+                                    <h5 class="fw-bold mb-0"><i class="fa-solid fa-user-lock text-dark me-2"></i>จัดการบัญชีผู้ใช้งานระบบ (Admin / Viewer)</h5>
+                                    <small class="text-muted">กำหนดสิทธิ์การเข้าใช้งาน: Admin แก้ไขได้ทุกส่วน | Viewer ดูตารางเวรและพิมพ์แบบฟอร์มเท่านั้น</small>
+                                </div>
+                                <button class="btn btn-dark btn-sm" onclick="openAddUserModal()">
+                                    <i class="fa-solid fa-user-plus me-1"></i> เพิ่มบัญชีผู้ใช้งาน
+                                </button>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-sm align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>ชื่อผู้ใช้งาน (Username)</th>
+                                            <th>ชื่อแสดงผล (Display Name)</th>
+                                            <th class="text-center">ระดับสิทธิ์ (Role)</th>
+                                            <th class="text-center" style="width: 160px;">จัดการ</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="users-tbody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Order Reference & Auto Rules -->
                     <div class="col-lg-6">
                         <div class="card p-4 h-100">
@@ -612,12 +805,12 @@
                     <!-- Google Sheets Database -->
                     <div class="col-12">
                         <div class="card p-4">
-                            <h5 class="fw-bold border-bottom pb-2 mb-3"><i class="fa-solid fa-cloud text-info me-2"></i>เชื่อมต่อ Google Sheets Database & Apps Script</h5>
+                            <h5 class="fw-bold border-bottom pb-2 mb-3"><i class="fa-solid fa-cloud text-info me-2"></i>เชื่อมต่อ Google Sheets Database & Apps Script (รองรับซิงค์ Logs)</h5>
                             <div class="row align-items-center g-3">
                                 <div class="col-md-8">
                                     <label class="form-label fw-bold">Google Apps Script Web App URL</label>
                                     <input type="url" id="gas-api-url" class="form-control" placeholder="https://script.google.com/macros/s/.../exec">
-                                    <div class="form-text">วาง URL จากการ Deploy Web App เพื่อซิงค์ตารางเวรและตั้งแจ้งเตือนอัตโนมัติทุกเช้า/เย็น</div>
+                                    <div class="form-text">วาง URL จากการ Deploy Web App เพื่อซิงค์ตารางเวร บันทึก Logs ลงชีตอัตโนมัติ และตั้งแจ้งเตือน LINE</div>
                                 </div>
                                 <div class="col-md-4 d-flex flex-column gap-2">
                                     <button class="btn btn-success" onclick="saveGasUrl()">
@@ -643,6 +836,242 @@
         <div class="modal-content border-0 shadow-lg">
             <div class="modal-header bg-dark text-white">
                 <h5 class="modal-title fw-bold"><i class="fa-solid fa-calendar-day text-warning me-2"></i>รายละเอียดเวรประจำวัน</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <input type="hidden" id="modal-date-str">
+                <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                    <h5 class="fw-bold text-primary mb-0" id="modal-thai-date">-</h5>
+                    <div class="form-check form-switch admin-only">
+                        <input class="form-check-input" type="checkbox" id="modal-holiday-toggle" onchange="toggleHolidayInModal()">
+                        <label class="form-check-label small fw-bold" for="modal-holiday-toggle">วันหยุดราชการ</label>
+                    </div>
+                </div>
+
+                <!-- Day Shift Section -->
+                <div id="modal-day-shift-box" class="p-3 rounded-3 mb-3 border border-warning" style="background-color: #fffbeb;">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="fw-bold text-warning-emphasis"><i class="fa-solid fa-sun text-warning me-1"></i> เวรกลางวัน (08.30 - 16.30 น.)</span>
+                        <span class="badge bg-warning text-dark" id="modal-holiday-badge">วันหยุดราชการ</span>
+                    </div>
+                    <select id="modal-day-select" class="form-select form-select-sm mb-2"></select>
+                    <div class="d-flex justify-content-between align-items-center small text-muted">
+                        <span id="modal-day-phone"><i class="fa-solid fa-phone me-1"></i> เบอร์โทร: -</span>
+                        <a id="modal-day-call" href="#" class="btn btn-outline-warning btn-sm py-0 px-2 text-dark d-none"><i class="fa-solid fa-phone-volume me-1"></i>โทรออก</a>
+                    </div>
+                </div>
+
+                <div id="modal-workday-notice" class="alert alert-secondary py-2 px-3 small mb-3 d-none">
+                    <i class="fa-solid fa-building me-1"></i> <b>วันทำการปกติ:</b> ไม่มีเวรกลางวัน (เฉพาะวันหยุดราชการจึงมีเวรกลางวัน)
+                </div>
+
+                <!-- Night Shift Section -->
+                <div class="p-3 rounded-3 border border-primary" style="background-color: #eef2ff;">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="fw-bold text-primary-emphasis"><i class="fa-solid fa-moon text-primary me-1"></i> เวรกลางคืน (16.30 - 08.30 น.)</span>
+                        <span class="badge bg-primary">ทุกวัน</span>
+                    </div>
+                    <select id="modal-night-select" class="form-select form-select-sm mb-2"></select>
+                    <div class="d-flex justify-content-between align-items-center small text-muted">
+                        <span id="modal-night-phone"><i class="fa-solid fa-phone me-1"></i> เบอร์โทร: -</span>
+                        <a id="modal-night-call" href="#" class="btn btn-outline-primary btn-sm py-0 px-2 d-none"><i class="fa-solid fa-phone-volume me-1"></i>โทรออก</a>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer bg-light justify-content-between">
+                <button type="button" class="btn line-green-btn btn-sm admin-only" onclick="sendSingleDayLine()">
+                    <i class="fa-brands fa-line me-1"></i> แจ้งเตือนวันนี้เข้า LINE
+                </button>
+                <div class="ms-auto">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">ปิด</button>
+                    <button type="button" class="btn btn-primary btn-sm admin-only" onclick="saveDayModalChanges()">
+                        <i class="fa-solid fa-save me-1"></i> บันทึกการแก้ไข
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL 2: ADD / EDIT MEMBER -->
+<div class="modal fade" id="memberModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form onsubmit="saveMemberForm(event)">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold" id="memberModalTitle">เพิ่มรายชื่อเจ้าหน้าที่</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="edit-member-id">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">ชุดปฏิบัติงาน</label>
+                        <select id="edit-member-shift" class="form-select" required>
+                            <option value="day">☀️ ชุดเวรกลางวัน (08.30 - 16.30 น. เฉพาะวันหยุด)</option>
+                            <option value="night">🌙 ชุดเวรกลางคืน (16.30 - 08.30 น. ทุกวัน)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">ยศ / คำนำหน้า / ชื่อ-นามสกุล</label>
+                        <input type="text" id="edit-member-name" class="form-control" placeholder="เช่น นายสมชาย ใจดี" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">หมายเลขโทรศัพท์</label>
+                        <input type="text" id="edit-member-phone" class="form-control" placeholder="เช่น 089-123-4567" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+                    <button type="submit" class="btn btn-primary">บันทึกข้อมูล</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL 3: ADD SYSTEM USER ACCOUNT -->
+<div class="modal fade" id="userAccountModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form onsubmit="saveNewUserAccount(event)">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title fw-bold"><i class="fa-solid fa-user-plus me-2"></i>เพิ่มบัญชีผู้ใช้งานระบบ</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">ชื่อผู้ใช้งาน (Username)</label>
+                        <input type="text" id="new-acc-username" class="form-control" placeholder="ภาษาอังกฤษ เช่น forest_staff" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">รหัสผ่าน (Password)</label>
+                        <input type="password" id="new-acc-password" class="form-control" placeholder="กำหนดรหัสผ่านอย่างน้อย 4 ตัวอักษร" minlength="4" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">ชื่อแสดงผล (Display Name)</label>
+                        <input type="text" id="new-acc-display" class="form-control" placeholder="เช่น นางสาวศิริพร หอมสมบัติ" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">ระดับสิทธิ์การใช้งาน (Role)</label>
+                        <select id="new-acc-role" class="form-select">
+                            <option value="viewer">Viewer (ดูตารางเวร / Dashboard / พิมพ์เอกสาร)</option>
+                            <option value="admin">Admin (ผู้ดูแลระบบ - แก้ไขได้ทุกส่วน + ดู Logs)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+                    <button type="submit" class="btn btn-primary">สร้างบัญชีผู้ใช้</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL 4: GOOGLE APPS SCRIPT CODE (WITH LOGS SHEET SUPPORT) -->
+<div class="modal fade" id="gasCodeModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title fw-bold"><i class="fa-solid fa-code me-2"></i>โค้ด Google Apps Script (บันทึกตารางเวร + Logs + แจ้งเตือน LINE)</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="small text-muted">คัดลอกโค้ดนี้ไปวางใน <b>Extensions &gt; Apps Script</b> ของ Google Sheets (รองรับสร้างชีต <code>Schedule</code> และชีต <code>Logs</code> อัตโนมัติ)</p>
+                <textarea id="gasCodeTextarea" class="form-control font-monospace small bg-light" rows="15" readonly>const LINE_TOKEN = "ใส่_CHANNEL_ACCESS_TOKEN_ที่นี่";
+const TARGET_ID  = "ใส่_USER_ID_หรือ_GROUP_ID_ที่นี่";
+
+function doPost(e) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const body = JSON.parse(e.postData.contents);
+  
+  // 1. บันทึก Activity Log ลงชีต Logs แบบเรียลไทม์
+  if (body.action === "addLog") {
+    let logSheet = ss.getSheetByName("Logs") || ss.insertSheet("Logs");
+    if (logSheet.getLastRow() === 0) {
+      logSheet.appendRow(["วัน-เวลา (พ.ศ.)", "Username", "ชื่อผู้ใช้งาน", "ระดับสิทธิ์", "ประเภทกิจกรรม", "รายละเอียด"]);
+    }
+    const l = body.log;
+    logSheet.appendRow([l.timestamp, l.username, l.displayName, l.role, l.action, l.details]);
+    return ContentService.createTextOutput(JSON.stringify({ status: "success" })).setMimeType(ContentService.MimeType.JSON);
+  }
+
+  // 2. ซิงค์ตารางเวรประจำเดือนลงชีต Schedule
+  if (body.action === "syncSchedule") {
+    let sheet = ss.getSheetByName("Schedule") || ss.insertSheet("Schedule");
+    sheet.clear();
+    sheet.appendRow(["วันที่", "ประเภทวัน", "เวรกลางวัน (08.30-16.30)", "เบอร์โทรกลางวัน", "เวรกลางคืน (16.30-08.30)", "เบอร์โทรกลางคืน"]);
+    body.rows.forEach(r => {
+      sheet.appendRow([r.date, r.isHoliday ? "วันหยุดราชการ" : "วันทำการปกติ", r.dayName, r.dayPhone, r.nightName, r.nightPhone]);
+    });
+    return ContentService.createTextOutput(JSON.stringify({ status: "success" })).setMimeType(ContentService.MimeType.JSON);
+  }
+
+  return ContentService.createTextOutput(JSON.stringify({ status: "ignored" })).setMimeType(ContentService.MimeType.JSON);
+}
+
+// ตั้ง Trigger ทำงานทุกวันเวลา 07:30 น. เพื่อแจ้งเตือนเวรประจำวันเข้า LINE อัตโนมัติ
+function sendDailyAutoNotify() {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Schedule");
+  if (!sheet) return;
+  const todayStr = Utilities.formatDate(new Date(), "Asia/Bangkok", "yyyy-MM-dd");
+  const data = sheet.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][0] === todayStr) {
+      const msg = `🌲 แจ้งเตือนเวรยามศูนย์ป่าไม้ขอนแก่น\n📅 วันที่: ${todayStr} (${data[i][1]})\n` +
+                  (data[i][2] ? `☀️ กลางวัน: ${data[i][2]} (${data[i][3]})\n` : `🏢 กลางวัน: วันทำการปกติ\n`) +
+                  `🌙 กลางคืน: ${data[i][4]} (${data[i][5]})`;
+      UrlFetchApp.fetch("https://api.line.me/v2/bot/message/push", {
+        method: "post",
+        headers: { "Content-Type": "application/json", "Authorization": "Bearer " + LINE_TOKEN },
+        payload: JSON.stringify({ to: TARGET_ID, messages: [{ type: "text", text: msg }] })
+      });
+      break;
+    }
+  }
+}</textarea>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" onclick="copyGasScript()"><i class="fa-solid fa-copy me-1"></i> คัดลอกโค้ด</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ปิด</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap 5.3 JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    // =========================================================================
+    // 1. INITIAL DATA (คำสั่งศูนย์ป่าไม้ขอนแก่น ที่ 10/2569 เดือนพฤศจิกายน 2569)
+    // =========================================================================
+    const DEFAULT_DAY_MEMBERS = [
+        { id: 'd1', name: 'นางสาวศิริพร หอมสมบัติ', phone: '089-365-6156' },
+        { id: 'd2', name: 'นางสาวรมณีย์ ทองดี', phone: '095-228-8895' },
+        { id: 'd3', name: 'นางสาวจุไรพร พลมณี', phone: '090-583-0740' },
+        { id: 'd4', name: 'นางสาวดลนภัส มาตสรรพ์', phone: '096-078-0219' },
+        { id: 'd5', name: 'นางสาวชญาณิสา ศรีคลัง', phone: '064-165-4081' },
+        { id: 'd6', name: 'นางมนต์ทิพย์ สีเหลือง', phone: '095-161-6096' },
+        { id: 'd7', name: 'นางกัลยาณี ขวัญศักดิ์', phone: '095-187-1795' },
+        { id: 'd8', name: 'นางสาวอรวรรณ นพเก้า', phone: '092-989-3264' }
+    ];
+
+    const DEFAULT_NIGHT_MEMBERS = [
+        { id: 'n1', name: 'นายสุภทรชัย ภัทรธรรม', phone: '082-229-2050' },
+        { id: 'n2', name: 'นายจตุพล อุทยานสุทธิ', phone: '061-514-1774' },
+        { id: 'n3', name: 'นายสุทธิรักษ์ สอนถม', phone: '063-407-5068' },
+        { id: 'n4', name: 'นายวิรัตน์ จันทร์สุพร', phone: '082-102-8391' },
+        { id: 'n5', name: 'นายธนากร สอนซุน', phone: '089-084-0401' },
+        { id: 'n6', name: 'นายปฏิพัทธ์ ชาญสุวรรณ', phone: '094-359-5382' },
+        { id: 'n7', name: 'นายวิทวัฒน์ สินธุรักษ์', phone: '084-093-2541' }
+    ];
+
+    const DEFAULT_SYSTEM_USERS = [
+        { username: 'admin', password: 'admin1234', displayName: 'ผู้ดูแลระบบ ศปม.ขก.', role: 'admin' },
+        { username: 'user', password: 'user1234', displayName: 'เจ้าหน้าที่ทั่วไป', role: 'viewer' }
+    ];
+
     // Exact mapping for Nov 2026 from Order 10/2569 (100% Match)
     const ORDER_10_NOV_2026 = {
         // Day Shifts (Weekends in Nov 2026: 1, 7, 8, 14, 15, 21, 22, 28, 29)
@@ -697,6 +1126,10 @@
     };
 
     // Application State
+    let systemUsers = JSON.parse(localStorage.getItem('kkf_system_users')) || JSON.parse(JSON.stringify(DEFAULT_SYSTEM_USERS));
+    let currentUser = JSON.parse(sessionStorage.getItem('kkf_current_user')) || null;
+    let activityLogs = JSON.parse(localStorage.getItem('kkf_activity_logs')) || [];
+
     let dayMembers = JSON.parse(localStorage.getItem('kkf_day_members')) || JSON.parse(JSON.stringify(DEFAULT_DAY_MEMBERS));
     let nightMembers = JSON.parse(localStorage.getItem('kkf_night_members')) || JSON.parse(JSON.stringify(DEFAULT_NIGHT_MEMBERS));
     let scheduleStore = JSON.parse(localStorage.getItem('kkf_schedule_store')) || {};
@@ -714,7 +1147,6 @@
 
     // Initialize App
     document.addEventListener('DOMContentLoaded', () => {
-        // Load Order 10/2569 into Nov 2026 if empty
         if (Object.keys(scheduleStore).length === 0) {
             seedOrder10Data();
         }
@@ -728,8 +1160,341 @@
         updateSyncStatusUI();
 
         ensureMonthPopulated('2026-11');
-        renderAllViews();
+
+        if (currentUser) {
+            enterAuthenticatedApp();
+        } else {
+            showLoginScreen();
+        }
     });
+
+    // =========================================================================
+    // AUTHENTICATION & RBAC (ADMIN / VIEWER)
+    // =========================================================================
+    function fillDemoLogin(u, p) {
+        document.getElementById('login-username').value = u;
+        document.getElementById('login-password').value = p;
+    }
+
+    function toggleLoginPassword() {
+        const inp = document.getElementById('login-password');
+        const icon = document.getElementById('login-eye-icon');
+        if (inp.type === 'password') {
+            inp.type = 'text';
+            icon.className = 'fa-solid fa-eye-slash';
+        } else {
+            inp.type = 'password';
+            icon.className = 'fa-solid fa-eye';
+        }
+    }
+
+    function handleLogin(e) {
+        e.preventDefault();
+        const u = document.getElementById('login-username').value.trim();
+        const p = document.getElementById('login-password').value;
+        const matched = systemUsers.find(acc => acc.username.toLowerCase() === u.toLowerCase() && acc.password === p);
+
+        if (!matched) {
+            Swal.fire('เข้าสู่ระบบไม่สำเร็จ', 'ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง', 'error');
+            return;
+        }
+
+        currentUser = {
+            username: matched.username,
+            displayName: matched.displayName,
+            role: matched.role
+        };
+        sessionStorage.setItem('kkf_current_user', JSON.stringify(currentUser));
+        addActivityLog('LOGIN', `เข้าสู่ระบบสำเร็จ (สิทธิ์: ${matched.role.toUpperCase()})`);
+        enterAuthenticatedApp();
+    }
+
+    function handleLogout() {
+        Swal.fire({
+            title: 'ออกจากระบบ?',
+            text: 'คุณต้องการออกจากระบบจัดการตารางเวรใช่หรือไม่',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'ออกจากระบบ',
+            cancelButtonText: 'ยกเลิก'
+        }).then((res) => {
+            if (res.isConfirmed) {
+                addActivityLog('LOGOUT', 'ออกจากระบบเรียบร้อย');
+                sessionStorage.removeItem('kkf_current_user');
+                currentUser = null;
+                document.getElementById('login-password').value = '';
+                showLoginScreen();
+            }
+        });
+    }
+
+    function showLoginScreen() {
+        document.getElementById('login-screen').classList.remove('d-none');
+        document.getElementById('main-app-shell').classList.add('d-none');
+    }
+
+    function enterAuthenticatedApp() {
+        document.getElementById('login-screen').classList.add('d-none');
+        document.getElementById('main-app-shell').classList.remove('d-none');
+
+        // Update Topbar User Info
+        document.getElementById('topbar-user-display').innerText = currentUser.displayName;
+        document.getElementById('topbar-username').innerText = `@${currentUser.username}`;
+        const badge = document.getElementById('topbar-role-badge');
+        if (currentUser.role === 'admin') {
+            badge.innerText = 'ADMIN';
+            badge.className = 'badge bg-danger';
+            document.getElementById('calendar-helper-text').innerText = 'คลิกที่วันที่ใดก็ได้เพื่อดูเบอร์โทรศัพท์ แก้ไขสลับเวร หรือส่งแจ้งเตือน LINE ทันที';
+        } else {
+            badge.innerText = 'VIEWER';
+            badge.className = 'badge bg-info text-dark';
+            document.getElementById('calendar-helper-text').innerText = 'โหมดดูข้อมูล (Viewer): คลิกที่วันที่ใดก็ได้เพื่อดูรายชื่อและเบอร์โทรศัพท์ติดต่อ';
+        }
+
+        applyRolePermissions();
+        switchTab('schedule');
+    }
+
+    function applyRolePermissions() {
+        const isAdmin = currentUser && currentUser.role === 'admin';
+        document.querySelectorAll('.admin-only').forEach(el => {
+            if (isAdmin) {
+                el.classList.remove('d-none-role');
+            } else {
+                el.classList.add('d-none-role');
+            }
+        });
+    }
+
+    function isAdminUser() {
+        return currentUser && currentUser.role === 'admin';
+    }
+
+    // =========================================================================
+    // ACTIVITY LOGS SYSTEM (AUTO-LOGGING + GOOGLE SHEETS SYNC + CSV EXPORT)
+    // =========================================================================
+    function getThaiTimestamp() {
+        const now = new Date();
+        const datePart = now.toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: 'numeric' });
+        const timePart = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        return `${datePart} ${timePart}`;
+    }
+
+    function addActivityLog(action, details) {
+        const actor = currentUser || { username: 'system', displayName: 'ระบบอัตโนมัติ', role: 'system' };
+        const logEntry = {
+            id: `log_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+            timestamp: getThaiTimestamp(),
+            username: actor.username,
+            displayName: actor.displayName,
+            role: actor.role,
+            action: action,
+            details: details,
+            synced: false
+        };
+
+        activityLogs.unshift(logEntry);
+        if (activityLogs.length > 500) activityLogs.length = 500;
+        localStorage.setItem('kkf_activity_logs', JSON.stringify(activityLogs));
+
+        // Real-time push to Google Sheets if Web App URL is configured
+        if (appSettings.gasUrl) {
+            fetch(appSettings.gasUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({ action: 'addLog', log: logEntry })
+            }).then(res => res.json()).then(data => {
+                if (data.status === 'success') {
+                    logEntry.synced = true;
+                    localStorage.setItem('kkf_activity_logs', JSON.stringify(activityLogs));
+                    if (!document.getElementById('tab-logs').classList.contains('d-none')) {
+                        renderLogsTable();
+                    }
+                }
+            }).catch(() => {});
+        }
+    }
+
+    function renderLogsTable() {
+        const search = (document.getElementById('log-search-input')?.value || '').toLowerCase();
+        const filter = document.getElementById('log-action-filter')?.value || 'ALL';
+
+        const filtered = activityLogs.filter(item => {
+            const matchType = filter === 'ALL' || item.action === filter;
+            const matchText = !search ||
+                item.username.toLowerCase().includes(search) ||
+                item.displayName.toLowerCase().includes(search) ||
+                item.details.toLowerCase().includes(search) ||
+                item.timestamp.toLowerCase().includes(search);
+            return matchType && matchText;
+        });
+
+        document.getElementById('log-total-count').innerText = filtered.length;
+        const tbody = document.getElementById('logs-tbody');
+        if (filtered.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-4">ไม่พบรายการประวัติการใช้งาน</td></tr>`;
+            return;
+        }
+
+        const badgeMap = {
+            'LOGIN': 'bg-success',
+            'LOGOUT': 'bg-secondary',
+            'EDIT_SHIFT': 'bg-warning text-dark',
+            'GENERATE_SHIFT': 'bg-primary',
+            'MEMBER_MANAGE': 'bg-info text-dark',
+            'HOLIDAY_MANAGE': 'bg-danger',
+            'LINE_NOTIFY': 'bg-success',
+            'SETTINGS': 'bg-dark'
+        };
+
+        tbody.innerHTML = filtered.map(l => `
+            <tr>
+                <td class="small text-nowrap">${l.timestamp}</td>
+                <td>
+                    <div class="fw-semibold small">${l.displayName}</div>
+                    <small class="text-muted">@${l.username}</small>
+                </td>
+                <td><span class="badge ${badgeMap[l.action] || 'bg-secondary'}">${l.action}</span></td>
+                <td class="small">${l.details}</td>
+                <td class="text-center">
+                    ${l.synced
+                        ? '<span class="badge bg-success-subtle text-success border border-success"><i class="fa-solid fa-cloud-check me-1"></i>Sheets</span>'
+                        : '<span class="badge bg-light text-secondary border"><i class="fa-solid fa-hard-drive me-1"></i>Local</span>'}
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function exportLogsCSV() {
+        if (!isAdminUser()) return;
+        let csv = '\uFEFF"วัน-เวลา (พ.ศ.)","Username","ชื่อผู้ใช้งาน","สิทธิ์","ประเภทกิจกรรม","รายละเอียด","สถานะซิงค์"\n';
+        activityLogs.forEach(l => {
+            const row = [l.timestamp, l.username, l.displayName, l.role, l.action, l.details.replace(/"/g, '""'), l.synced ? 'Google Sheets' : 'Local'];
+            csv += row.map(v => `"${v}"`).join(',') + '\n';
+        });
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `activity_logs_kkf_${new Date().toISOString().slice(0, 10)}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    function clearLocalLogs() {
+        if (!isAdminUser()) return;
+        Swal.fire({
+            title: 'ล้างประวัติการใช้งานในเครื่อง?',
+            text: 'รายการ Log ทั้งหมดใน LocalStorage จะถูกลบออก',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'ยืนยันล้างประวัติ',
+            cancelButtonText: 'ยกเลิก'
+        }).then((res) => {
+            if (res.isConfirmed) {
+                activityLogs = [];
+                localStorage.setItem('kkf_activity_logs', JSON.stringify(activityLogs));
+                addActivityLog('SETTINGS', 'ล้างประวัติการใช้งาน (Activity Logs) ในเครื่อง');
+                renderLogsTable();
+                Swal.fire('เรียบร้อย', 'ล้างประวัติการใช้งานเรียบร้อยแล้ว', 'success');
+            }
+        });
+    }
+
+    // =========================================================================
+    // USER ACCOUNTS MANAGEMENT (ADMIN ONLY)
+    // =========================================================================
+    function renderUsersTable() {
+        const tbody = document.getElementById('users-tbody');
+        if (!tbody) return;
+        tbody.innerHTML = systemUsers.map((u, idx) => `
+            <tr>
+                <td class="fw-bold">@${u.username}</td>
+                <td>${u.displayName}</td>
+                <td class="text-center">
+                    <span class="badge ${u.role === 'admin' ? 'bg-danger' : 'bg-info text-dark'}">${u.role.toUpperCase()}</span>
+                </td>
+                <td class="text-center text-nowrap">
+                    <button class="btn btn-sm btn-outline-primary me-1" onclick="changeUserPassword(${idx})" title="เปลี่ยนรหัสผ่าน">
+                        <i class="fa-solid fa-key"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteSystemUser(${idx})" ${u.username === 'admin' ? 'disabled' : ''} title="ลบบัญชี">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function openAddUserModal() {
+        if (!isAdminUser()) return;
+        document.getElementById('new-acc-username').value = '';
+        document.getElementById('new-acc-password').value = '';
+        document.getElementById('new-acc-display').value = '';
+        document.getElementById('new-acc-role').value = 'viewer';
+        new bootstrap.Modal(document.getElementById('userAccountModal')).show();
+    }
+
+    function saveNewUserAccount(e) {
+        e.preventDefault();
+        if (!isAdminUser()) return;
+        const username = document.getElementById('new-acc-username').value.trim();
+        const password = document.getElementById('new-acc-password').value;
+        const displayName = document.getElementById('new-acc-display').value.trim();
+        const role = document.getElementById('new-acc-role').value;
+
+        if (systemUsers.some(u => u.username.toLowerCase() === username.toLowerCase())) {
+            Swal.fire('ชื่อผู้ใช้ซ้ำ', 'มีชื่อผู้ใช้งานนี้ในระบบแล้ว', 'error');
+            return;
+        }
+        systemUsers.push({ username, password, displayName, role });
+        localStorage.setItem('kkf_system_users', JSON.stringify(systemUsers));
+        addActivityLog('SETTINGS', `เพิ่มบัญชีผู้ใช้งานใหม่: @${username} (${displayName}) สิทธิ์ ${role.toUpperCase()}`);
+        bootstrap.Modal.getInstance(document.getElementById('userAccountModal')).hide();
+        renderUsersTable();
+        Swal.fire('สำเร็จ', 'เพิ่มบัญชีผู้ใช้งานเรียบร้อยแล้ว', 'success');
+    }
+
+    function changeUserPassword(idx) {
+        if (!isAdminUser()) return;
+        const target = systemUsers[idx];
+        Swal.fire({
+            title: `เปลี่ยนรหัสผ่านของ @${target.username}`,
+            input: 'password',
+            inputPlaceholder: 'กรอกรหัสผ่านใหม่ (อย่างน้อย 4 ตัวอักษร)',
+            showCancelButton: true,
+            confirmButtonText: 'บันทึกรหัสผ่าน',
+            cancelButtonText: 'ยกเลิก',
+            inputValidator: (val) => (!val || val.length < 4) ? 'กรุณากรอกรหัสผ่านอย่างน้อย 4 ตัวอักษร' : null
+        }).then((res) => {
+            if (res.isConfirmed) {
+                systemUsers[idx].password = res.value;
+                localStorage.setItem('kkf_system_users', JSON.stringify(systemUsers));
+                addActivityLog('SETTINGS', `เปลี่ยนรหัสผ่านของบัญชี @${target.username}`);
+                Swal.fire('สำเร็จ', 'อัปเดตรหัสผ่านเรียบร้อยแล้ว', 'success');
+            }
+        });
+    }
+
+    function deleteSystemUser(idx) {
+        if (!isAdminUser()) return;
+        const target = systemUsers[idx];
+        if (target.username === 'admin') return;
+        Swal.fire({
+            title: `ลบบัญชี @${target.username}?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'ลบบัญชี',
+            cancelButtonText: 'ยกเลิก'
+        }).then((res) => {
+            if (res.isConfirmed) {
+                systemUsers.splice(idx, 1);
+                localStorage.setItem('kkf_system_users', JSON.stringify(systemUsers));
+                addActivityLog('SETTINGS', `ลบบัญชีผู้ใช้งาน @${target.username} (${target.displayName})`);
+                renderUsersTable();
+            }
+        });
+    }
 
     function seedOrder10Data() {
         for (let d = 1; d <= 30; d++) {
@@ -1007,6 +1772,7 @@
     }
 
     function autoGenerateCurrentMonth() {
+        if (!isAdminUser()) return;
         const ym = document.getElementById('month-picker').value;
         Swal.fire({
             title: 'จัดตารางเวรอัตโนมัติ?',
@@ -1018,9 +1784,61 @@
         }).then((result) => {
             if (result.isConfirmed) {
                 generateMonthSchedule(ym, true);
+                addActivityLog('GENERATE_SHIFT', `คำนวณจัดตารางเวรอัตโนมัติ ประจำเดือน ${formatThaiMonth(ym)}`);
                 renderAllViews();
                 Swal.fire('สำเร็จ!', 'จัดตารางเวรอัตโนมัติเรียบร้อยแล้ว', 'success');
             }
+        });
+    }
+
+    function resetToOrder10() {
+        if (!isAdminUser()) return;
+        Swal.fire({
+            title: 'โหลดข้อมูลคำสั่งที่ 10/2569?',
+            text: 'คืนค่ารายชื่อและตารางเวรเดือนพฤศจิกายน 2569 ตามใบคำสั่งต้นฉบับ',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'ยืนยัน',
+            cancelButtonText: 'ยกเลิก'
+        }).then((res) => {
+            if (res.isConfirmed) {
+                dayMembers = JSON.parse(JSON.stringify(DEFAULT_DAY_MEMBERS));
+                nightMembers = JSON.parse(JSON.stringify(DEFAULT_NIGHT_MEMBERS));
+                customHolidays = {};
+                localStorage.setItem('kkf_day_members', JSON.stringify(dayMembers));
+                localStorage.setItem('kkf_night_members', JSON.stringify(nightMembers));
+                document.getElementById('month-picker').value = '2026-11';
+                seedOrder10Data();
+                addActivityLog('GENERATE_SHIFT', 'รีเซ็ตข้อมูลกลับเป็นคำสั่งศูนย์ป่าไม้ขอนแก่น ที่ 10/2569 (พ.ย. 2569)');
+                renderAllViews();
+                Swal.fire('เรียบร้อย', 'โหลดข้อมูลตามคำสั่งที่ 10/2569 แล้ว', 'success');
+            }
+        });
+    }
+
+    function switchTab(tabId, e) {
+        if (e) e.preventDefault();
+        if (['members', 'logs', 'settings'].includes(tabId) && !isAdminUser()) {
+            Swal.fire('ไม่มีสิทธิ์เข้าถึง', 'เฉพาะผู้ดูแลระบบ (Admin) เท่านั้นที่สามารถเข้าถึงเมนูนี้ได้', 'warning');
+            return;
+        }
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.add('d-none'));
+        document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
+        document.getElementById(`tab-${tabId}`).classList.remove('d-none');
+        const activeLink = (e && e.currentTarget) ? e.currentTarget : document.getElementById(`nav-${tabId}`);
+        if (activeLink) activeLink.classList.add('active');
+        renderAllViews();
+    }
+
+    function renderAllViews() {
+        renderCalendar();
+        renderDashboard();
+        renderOfficialTables();
+        renderMembersTables();
+        renderHolidaysList();
+        renderLogsTable();
+        renderUsersTable();
+    }
         });
     }
 
@@ -1166,6 +1984,7 @@
             if (entry.dayId === m.id) opt.selected = true;
             daySel.appendChild(opt);
         });
+        daySel.disabled = !isAdminUser();
         daySel.onchange = updateModalPhones;
 
         // Populate Night Shift Select
@@ -1178,6 +1997,7 @@
             if (entry.nightId === m.id) opt.selected = true;
             nightSel.appendChild(opt);
         });
+        nightSel.disabled = !isAdminUser();
         nightSel.onchange = updateModalPhones;
 
         toggleHolidayUI(holiday);
@@ -1229,10 +2049,18 @@
     }
 
     function saveDayModalChanges() {
+        if (!isAdminUser()) return;
         const dateStr = document.getElementById('modal-date-str').value;
+        const oldEntry = scheduleStore[dateStr] || {};
+        const oldDayName = dayMembers.find(m => m.id === oldEntry.dayId)?.name || 'ไม่มี';
+        const oldNightName = nightMembers.find(m => m.id === oldEntry.nightId)?.name || 'ไม่มี';
+
         const isHol = document.getElementById('modal-holiday-toggle').checked;
         const dayId = isHol ? (document.getElementById('modal-day-select').value || null) : null;
         const nightId = document.getElementById('modal-night-select').value || null;
+
+        const newDayName = dayMembers.find(m => m.id === dayId)?.name || 'ไม่มี';
+        const newNightName = nightMembers.find(m => m.id === nightId)?.name || 'ไม่มี';
 
         if (isHol) {
             const existingLabel = getHolidayInfo(dateStr).label;
@@ -1242,6 +2070,13 @@
         }
         scheduleStore[dateStr] = { dayId, nightId };
         saveScheduleStore();
+
+        const thaiShortDate = new Date(dateStr + 'T00:00:00').toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
+        const changes = [];
+        if (oldDayName !== newDayName) changes.push(`กลางวัน: "${oldDayName}" ➔ "${newDayName}"`);
+        if (oldNightName !== newNightName) changes.push(`กลางคืน: "${oldNightName}" ➔ "${newNightName}"`);
+        if (changes.length === 0) changes.push(`อัปเดตสถานะวันหยุด (${isHol ? 'วันหยุด' : 'วันทำการ'})`);
+        addActivityLog('EDIT_SHIFT', `แก้ไขเวรวันที่ ${thaiShortDate} (${changes.join(', ')})`);
 
         bootstrap.Modal.getInstance(document.getElementById('dayDetailModal')).hide();
         renderAllViews();
@@ -1309,9 +2144,11 @@
             document.getElementById('kpi-today-duty').innerText = nMem ? `🌙 ${shortenName(nMem.name)}` : '-';
         }
     function updateOrderRefFromDoc(val) {
+        if (!isAdminUser()) return;
         appSettings.orderText = val;
         document.getElementById('setting-order-text').value = val;
         localStorage.setItem('kkf_settings', JSON.stringify(appSettings));
+        addActivityLog('SETTINGS', `แก้ไขข้อความหัวคำสั่งราชการ: "${val}"`);
         renderOfficialTables();
     }
 
@@ -1362,12 +2199,15 @@
     }
 
     function moveMember(shift, index, dir) {
+        if (!isAdminUser()) return;
         const list = shift === 'day' ? dayMembers : nightMembers;
         const target = index + dir;
         if (target < 0 || target >= list.length) return;
+        const movedName = list[index].name;
         [list[index], list[target]] = [list[target], list[index]];
         localStorage.setItem('kkf_day_members', JSON.stringify(dayMembers));
         localStorage.setItem('kkf_night_members', JSON.stringify(nightMembers));
+        addActivityLog('MEMBER_MANAGE', `เลื่อนลำดับคิว (${shift === 'day' ? 'กลางวัน' : 'กลางคืน'}): ${movedName} จากคิวที่ ${index + 1} เป็น ${target + 1}`);
         renderAllViews();
     }
 
@@ -1397,20 +2237,24 @@
     }
 
     function addCustomHoliday() {
+        if (!isAdminUser()) return;
         const dateStr = document.getElementById('new-holiday-date').value;
         const name = document.getElementById('new-holiday-name').value.trim() || 'วันหยุดนักขัตฤกษ์';
         if (!dateStr) return;
         customHolidays[dateStr] = name;
         saveScheduleStore();
         generateMonthSchedule(dateStr.slice(0, 7), true);
+        addActivityLog('HOLIDAY_MANAGE', `เพิ่มวันหยุดราชการ: ${dateStr} (${name})`);
         renderAllViews();
         Swal.fire({ toast: true, position: 'bottom-end', icon: 'success', title: `เพิ่มวันหยุด ${name} และคำนวณเวรใหม่แล้ว`, showConfirmButton: false, timer: 2200 });
     }
 
     function removeHoliday(dateStr) {
+        if (!isAdminUser()) return;
         customHolidays[dateStr] = false;
         saveScheduleStore();
         generateMonthSchedule(dateStr.slice(0, 7), true);
+        addActivityLog('HOLIDAY_MANAGE', `ยกเลิกวันหยุดราชการวันที่ ${dateStr}`);
         renderAllViews();
     }
         });
@@ -1564,17 +2408,21 @@
 
     function saveMemberForm(e) {
         e.preventDefault();
+        if (!isAdminUser()) return;
         const id = document.getElementById('edit-member-id').value;
         const shift = document.getElementById('edit-member-shift').value;
         const name = document.getElementById('edit-member-name').value.trim();
         const phone = document.getElementById('edit-member-phone').value.trim();
+        const shiftLabel = shift === 'day' ? 'เวรกลางวัน' : 'เวรกลางคืน';
 
         const list = shift === 'day' ? dayMembers : nightMembers;
         if (id) {
             const idx = list.findIndex(m => m.id === id);
             if (idx !== -1) list[idx] = { id, name, phone };
+            addActivityLog('MEMBER_MANAGE', `แก้ไขข้อมูลเจ้าหน้าที่ (${shiftLabel}): ${name} (${phone})`);
         } else {
             list.push({ id: `${shift}_${Date.now()}`, name, phone });
+            addActivityLog('MEMBER_MANAGE', `เพิ่มเจ้าหน้าที่ใหม่ (${shiftLabel}): ${name} (${phone})`);
         }
 
         localStorage.setItem('kkf_day_members', JSON.stringify(dayMembers));
@@ -1585,11 +2433,13 @@
     }
 
     function deleteMember(shift, id) {
+        if (!isAdminUser()) return;
         const list = shift === 'day' ? dayMembers : nightMembers;
         if (list.length <= 1) {
             Swal.fire('ไม่สามารถลบได้', 'ต้องมีรายชื่ออย่างน้อย 1 คนในชุดปฏิบัติงาน', 'error');
             return;
         }
+        const targetMem = list.find(m => m.id === id);
         Swal.fire({
             title: 'ยืนยันการลบรายชื่อ?',
             icon: 'warning',
@@ -1605,6 +2455,7 @@
                     nightMembers = nightMembers.filter(m => m.id !== id);
                     localStorage.setItem('kkf_night_members', JSON.stringify(nightMembers));
                 }
+                addActivityLog('MEMBER_MANAGE', `ลบรายชื่อเจ้าหน้าที่ (${shift === 'day' ? 'เวรกลางวัน' : 'เวรกลางคืน'}): ${targetMem ? targetMem.name : id}`);
                 renderAllViews();
             }
         });
@@ -1614,24 +2465,30 @@
     // 7. LINE MESSAGING API & GOOGLE SHEETS SYNC
     // =========================================================================
     function saveGeneralSettings() {
+        if (!isAdminUser()) return;
         appSettings.orderText = document.getElementById('setting-order-text').value;
         appSettings.anchorDate = document.getElementById('setting-anchor-date').value;
         localStorage.setItem('kkf_settings', JSON.stringify(appSettings));
+        addActivityLog('SETTINGS', `บันทึกการตั้งค่าคำสั่งและวันเริ่มรอบเวร (${appSettings.anchorDate})`);
         renderOfficialTables();
         Swal.fire('สำเร็จ', 'บันทึกการตั้งค่าคำสั่งเรียบร้อยแล้ว', 'success');
     }
 
     function saveLineConfig() {
+        if (!isAdminUser()) return;
         appSettings.lineToken = document.getElementById('line-token').value.trim();
         appSettings.lineTargetId = document.getElementById('line-target-id').value.trim();
         localStorage.setItem('kkf_settings', JSON.stringify(appSettings));
+        addActivityLog('SETTINGS', 'อัปเดตการตั้งค่า LINE Messaging API Token / Target ID');
         Swal.fire('สำเร็จ', 'บันทึกการตั้งค่า LINE Messaging API แล้ว', 'success');
     }
 
     function saveGasUrl() {
+        if (!isAdminUser()) return;
         appSettings.gasUrl = document.getElementById('gas-api-url').value.trim();
         localStorage.setItem('kkf_settings', JSON.stringify(appSettings));
         updateSyncStatusUI();
+        addActivityLog('SETTINGS', appSettings.gasUrl ? 'เชื่อมต่อ Google Apps Script Web App URL' : 'ยกเลิกการเชื่อมต่อ Google Apps Script URL');
         Swal.fire('สำเร็จ', 'บันทึก Google Apps Script URL เรียบร้อยแล้ว', 'success');
     }
 
@@ -1673,6 +2530,7 @@
     }
 
     function sendSingleDayLine() {
+        if (!isAdminUser()) return;
         const dateStr = document.getElementById('modal-date-str').value;
         const dt = new Date(dateStr + 'T00:00:00');
         const thaiDate = dt.toLocaleDateString('th-TH', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
@@ -1680,8 +2538,7 @@
         const entry = scheduleStore[dateStr] || {};
         const dMem = dayMembers.find(m => m.id === entry.dayId);
         const nMem = nightMembers.find(m => m.id === entry.nightId);
-
-        const bodyContents = [];
+        addActivityLog('LINE_NOTIFY', `ส่งแจ้งเตือน LINE เวรประจำวันที่ ${thaiDate}`);
         if (holiday) {
             bodyContents.push(
                 { type: 'text', text: '☀️ เวรกลางวัน (08.30 - 16.30 น.)', weight: 'bold', size: 'sm', color: '#d97706' },
@@ -1722,12 +2579,12 @@
     }
 
     function sendMonthSummaryToLine() {
+        if (!isAdminUser()) return;
         const ym = document.getElementById('month-picker').value;
         const [year, month] = ym.split('-').map(Number);
         const daysInMonth = new Date(year, month, 0).getDate();
         let text = `🌲 สรุปตารางเวรยาม ศูนย์ป่าไม้ขอนแก่น\nประจำเดือน ${formatThaiMonth(ym)}\n====================\n`;
-
-        for (let d = 1; d <= daysInMonth; d++) {
+        addActivityLog('LINE_NOTIFY', `ส่งสรุปตารางเวรประจำเดือน ${formatThaiMonth(ym)} เข้า LINE`);
             const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
             const entry = scheduleStore[dateStr] || {};
             const dMem = dayMembers.find(m => m.id === entry.dayId);
@@ -1743,6 +2600,8 @@
     }
 
     function testLineConnection() {
+        if (!isAdminUser()) return;
+        addActivityLog('LINE_NOTIFY', 'ทดสอบส่งข้อความเชื่อมต่อ LINE Messaging API');
         pushLineFlex({
             to: appSettings.lineTargetId,
             messages: [{ type: 'text', text: '🌲 ทดสอบการเชื่อมต่อ LINE Messaging API ระบบตารางเวรศูนย์ป่าไม้ขอนแก่น สำเร็จ!' }]
@@ -1750,6 +2609,7 @@
     }
 
     async function syncWithGoogleSheet() {
+        if (!isAdminUser()) return;
         if (!appSettings.gasUrl) {
             Swal.fire('ไม่พบ Web App URL', 'กรุณาตั้งค่า Google Apps Script URL ในหน้าตั้งค่าก่อน', 'warning');
             return;
@@ -1783,6 +2643,7 @@
             });
             const data = await res.json();
             if (data.status === 'success') {
+                addActivityLog('SETTINGS', `ซิงค์ตารางเวรเดือน ${formatThaiMonth(ym)} ลง Google Sheets สำเร็จ`);
                 Swal.fire('ซิงค์สำเร็จ!', `บันทึกตารางเวรเดือน ${formatThaiMonth(ym)} ลง Google Sheets เรียบร้อย`, 'success');
             } else {
                 Swal.fire('เกิดข้อผิดพลาด', data.message, 'error');
