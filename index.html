@@ -806,20 +806,10 @@ const DEFAULT_USERS = [
 // สร้างข้อมูลเดือนพฤศจิกายน 2569 (2026-11) ให้ตรงตามหนังสือคำสั่ง 10/2569 100%
 function buildOfficialNov2026Schedule() {
   const schedule = {};
-  // เวรกลางวัน พ.ย. 2569:
-  // D1: 1, 29 | D2: 7 | D3: 8 | D4: 14 | D5: 15 | D6: 21 | D7: 22 | D8: 28
   const dayMap = {
     1: 'D1', 7: 'D2', 8: 'D3', 14: 'D4', 15: 'D5', 21: 'D6', 22: 'D7', 28: 'D8', 29: 'D1'
   };
 
-  // เวรกลางคืน พ.ย. 2569 ตามหนังสือคำสั่ง 10/2569:
-  // N1: 1, 14, 20, 26
-  // N2: 2, 8, 21, 27
-  // N3: 3, 9, 15, 28
-  // N4: 4, 10, 16, 22
-  // N5: 5, 11, 17, 23, 29
-  // N6: 6, 12, 18, 24, 30
-  // N7: 7, 13, 19, 25
   const nightMap = {
     1: 'N1', 2: 'N2', 3: 'N3', 4: 'N4', 5: 'N5', 6: 'N6', 7: 'N7',
     8: 'N2', 9: 'N3', 10: 'N4', 11: 'N5', 12: 'N6', 13: 'N7', 14: 'N1',
@@ -859,7 +849,7 @@ let appState = {
 
 let currentUser = null;
 let selectedYear = 2026;
-let selectedMonth = 11; // 1-12 (ค่าเริ่มต้น พฤศจิกายน 2569)
+let selectedMonth = 11;
 let activeModalDateKey = null;
 let dayChartInstance = null;
 let nightChartInstance = null;
@@ -871,7 +861,6 @@ document.addEventListener('DOMContentLoaded', () => {
   loadStateFromLocal();
   populateMonthSelector();
 
-  // ตรวจสอบ Session การเข้าสู่ระบบ
   const savedSession = sessionStorage.getItem(SESSION_KEY);
   if (savedSession) {
     currentUser = JSON.parse(savedSession);
@@ -911,7 +900,6 @@ function saveState(logEntry = null) {
 
   localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
 
-  // ซิงค์ขึ้น Google Sheets อัตโนมัติหากตั้งค่า URL ไว้
   if (appState.gasUrl) {
     syncToGoogleSheets(false, logEntry);
   }
@@ -967,7 +955,6 @@ function showApp() {
   roleBadge.textContent = currentUser.role;
   roleBadge.className = currentUser.role === 'ADMIN' ? 'badge bg-warning text-dark' : 'badge bg-info text-dark';
 
-  // จัดการสิทธิ์การแสดงผล (Admin vs Viewer)
   const adminElements = document.querySelectorAll('.admin-only');
   adminElements.forEach(el => {
     if (currentUser.role === 'ADMIN') {
@@ -1013,7 +1000,6 @@ function updateSyncBadge() {
 function populateMonthSelector() {
   const sel = document.getElementById('monthSelector');
   sel.innerHTML = '';
-  // สร้างรายการตั้งแต่ ต.ค. 2569 ถึง ธ.ค. 2570
   const startYear = 2026, startMonth = 10;
   for (let i = 0; i < 15; i++) {
     let m = startMonth + i;
@@ -1051,7 +1037,7 @@ function changeMonth(delta) {
 
 function isWeekendOrHoliday(year, month, day) {
   const dateObj = new Date(year, month - 1, day);
-  const dow = dateObj.getDay(); // 0 = อาทิตย์, 6 = เสาร์
+  const dow = dateObj.getDay();
   const dateKey = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
   if (dow === 0 || dow === 6) return true;
   if (appState.holidays && appState.holidays[dateKey]) return true;
@@ -1112,12 +1098,11 @@ function restoreNov2569Official() {
   });
 }
 
-// อัลกอริทึมจัดเวรต่อเนื่องข้ามเดือน + ป้องกันการซ้ำวันในสัปดาห์เดียวกัน (อาทิตย์-เสาร์)
+// อัลกอริทึมจัดเวรต่อเนื่องข้ามเดือน + Sliding Window ป้องกันซ้ำ 6 วันล่าสุด (แก้ปัญหาเวรกลางคืนซ้ำวันเดิมในสัปดาห์)
 function generateMonthSchedule(year, month, logAction = true) {
   const monthKey = `${year}-${String(month).padStart(2, '0')}`;
   const daysInMonth = new Date(year, month, 0).getDate();
 
-  // หาคิวล่าสุดจากเดือนก่อนหน้าเพื่อรันคิวต่อเนื่อง
   let prevY = year, prevM = month - 1;
   if (prevM < 1) { prevM = 12; prevY--; }
   const prevMonthKey = `${prevY}-${String(prevM).padStart(2, '0')}`;
@@ -1158,51 +1143,41 @@ function generateMonthSchedule(year, month, logAction = true) {
   const nightCount = appState.nightMembers.length;
   const dayCount = appState.dayMembers.length;
 
-  // ติดตามคนที่เข้าเวรในสัปดาห์เดียวกัน (อาทิตย์ - เสาร์) เพื่อไม่ให้ซ้ำวันในสัปดาห์เดียว
-  let weeklyAssignedNight = new Set();
-
-  // หากวันที่ 1 ของเดือนไม่ใช่ วันอาทิตย์ ให้ดึงรายชื่อคนที่เข้าเวรช่วงต้นสัปดาห์จากปลายเดือนก่อนหน้ามาป้องกันการซ้ำในสัปดาห์รอยต่อ
-  const firstDow = new Date(year, month - 1, 1).getDay();
-  if (firstDow > 0 && prevSchedule) {
-    const prevDaysCount = new Date(prevY, prevM, 0).getDate();
-    for (let offset = 0; offset < firstDow; offset++) {
-      const pDay = prevDaysCount - offset;
-      const pKey = `${prevMonthKey}-${String(pDay).padStart(2, '0')}`;
-      if (prevSchedule[pKey] && prevSchedule[pKey].nightMemberId) {
-        weeklyAssignedNight.add(prevSchedule[pKey].nightMemberId);
-      }
+  let recentNightIds = [];
+  if (prevSchedule) {
+    const prevDays = Object.keys(prevSchedule).sort();
+    for (let i = prevDays.length - 1; i >= Math.max(0, prevDays.length - 6); i--) {
+      const nId = prevSchedule[prevDays[i]].nightMemberId;
+      if (nId) recentNightIds.unshift(nId);
     }
   }
 
   for (let d = 1; d <= daysInMonth; d++) {
     const dateObj = new Date(year, month - 1, d);
-    const dow = dateObj.getDay();
-    if (dow === 0) {
-      weeklyAssignedNight.clear(); // เริ่มสัปดาห์ใหม่ (วันอาทิตย์) ล้างรายการสัปดาห์ก่อน
-    }
-
     const dd = String(d).padStart(2, '0');
     const dateKey = `${monthKey}-${dd}`;
 
-    // 1. จัดเวรกลางวัน (เฉพาะเสาร์-อาทิตย์ และวันหยุดราชการ)
     let assignedDayId = null;
     if (isWeekendOrHoliday(year, month, d) && dayCount > 0) {
       assignedDayId = appState.dayMembers[nextDayIdx % dayCount].id;
       nextDayIdx = (nextDayIdx + 1) % dayCount;
     }
 
-    // 2. จัดเวรกลางคืน (ทุกวัน โดยไม่ให้ซ้ำคนในสัปดาห์เดียวกัน)
     let assignedNightId = null;
     if (nightCount > 0) {
       let chosenIdx = nextNightIdx % nightCount;
       let attempts = 0;
-      while (weeklyAssignedNight.has(appState.nightMembers[chosenIdx].id) && attempts < nightCount) {
-        chosenIdx = (chosenIdx + 1) % nightCount;
+      while (recentNightIds.includes(appState.nightMembers[chosenIdx].id) && attempts < nightCount * 2) {
+        nextNightIdx++;
+        chosenIdx = nextNightIdx % nightCount;
         attempts++;
       }
       assignedNightId = appState.nightMembers[chosenIdx].id;
-      weeklyAssignedNight.add(assignedNightId);
-      nextNightIdx = (chosenIdx + 1) % nightCount;
+      recentNightIds.push(assignedNightId);
+      if (recentNightIds.length > Math.min(6, nightCount - 1)) {
+        recentNightIds.shift();
+      }
+      nextNightIdx++;
     }
 
     newSchedule[dateKey] = {
@@ -1245,7 +1220,6 @@ function renderCalendar() {
   const grid = document.getElementById('calendarGrid');
   grid.innerHTML = '';
 
-  // ช่องว่างก่อนวันที่ 1
   for (let i = 0; i < firstDow; i++) {
     const emptyCell = document.createElement('div');
     emptyCell.className = 'calendar-cell empty';
@@ -1323,7 +1297,6 @@ function openDayDetailModal(dateKey) {
     ? `<div class="fw-bold fs-6">${nightMember.name}</div><div class="small text-muted"><i class="bi bi-telephone-fill me-1"></i>${nightMember.phone}</div>`
     : `<div class="text-muted small fst-italic">- ยังไม่ได้กำหนดผู้เข้าเวร -</div>`;
 
-  // เติม Dropdown สำหรับ Admin แก้ไขเวร
   const daySel = document.getElementById('modalDayMemberSelect');
   daySel.innerHTML = '<option value="">-- ไม่มีเวรกลางวัน --</option>';
   appState.dayMembers.forEach(mem => {
@@ -1419,7 +1392,6 @@ function renderDashboard() {
     : '0';
   document.getElementById('statOverrides').textContent = totalOverrides;
 
-  // ตารางสรุปกลางวัน
   const dayTbody = document.getElementById('daySummaryTableBody');
   dayTbody.innerHTML = '';
   appState.dayMembers.forEach((m, idx) => {
@@ -1434,7 +1406,6 @@ function renderDashboard() {
     `;
   });
 
-  // ตารางสรุปกลางคืน
   const nightTbody = document.getElementById('nightSummaryTableBody');
   nightTbody.innerHTML = '';
   appState.nightMembers.forEach((m, idx) => {
@@ -1449,7 +1420,6 @@ function renderDashboard() {
     `;
   });
 
-  // วาดกราฟ Chart.js
   if (dayChartInstance) dayChartInstance.destroy();
   dayChartInstance = new Chart(document.getElementById('dayChart'), {
     type: 'bar',
@@ -1482,7 +1452,7 @@ function renderDashboard() {
 }
 
 // =========================================================================
-// 7. OFFICIAL GOVERNMENT ORDER FORM (แบบฟอร์มคำสั่งราชการเลขไทย)
+// 7. OFFICIAL GOVERNMENT ORDER FORM
 // =========================================================================
 function renderOfficialDoc() {
   const shiftType = document.getElementById('docShiftType').value;
@@ -1570,7 +1540,6 @@ function renderMembersTab() {
     `;
   });
 
-  // Render Holidays
   const hContainer = document.getElementById('holidaysList');
   hContainer.innerHTML = '';
   Object.keys(appState.holidays).sort().forEach(dateKey => {
@@ -1839,7 +1808,6 @@ function deleteUserAccount(username) {
   renderSettingsTab();
 }
 
-// ซิงค์ข้อมูลไปยัง Google Sheets ผ่าน GAS Web App
 async function syncToGoogleSheets(showToast = false, logEntry = null) {
   if (!appState.gasUrl) {
     if (showToast) Swal.fire('ยังไม่ได้ตั้งค่า API', 'กรุณาระบุ Google Apps Script URL ในเมนูตั้งค่าก่อน', 'warning');
@@ -1869,7 +1837,6 @@ async function syncToGoogleSheets(showToast = false, logEntry = null) {
   }
 }
 
-// ดึงข้อมูลจาก Google Sheets
 async function syncFromGoogleSheets(showToast = false) {
   if (!appState.gasUrl) {
     if (showToast) Swal.fire('โหมด Local Storage', 'ยังไม่ได้เชื่อมต่อ Google Apps Script URL ข้อมูลถูกเก็บในเครื่องของคุณ', 'info');
@@ -1892,10 +1859,9 @@ async function syncFromGoogleSheets(showToast = false) {
   }
 }
 
-// ส่งแจ้งเตือนผ่าน LINE Messaging API (ส่งผ่าน GAS Backend เพื่อหลีกเลี่ยง CORS)
 async function pushLineViaGAS(textMessage, logDetail, targetDate = '-') {
   if (!appState.gasUrl) {
-    Swal.fire('ต้องเชื่อมต่อ Google Apps Script', 'กรุณาตั้งค่า Google Apps Script Web App URL ก่อนใช้งานส่ง LINE Messaging API (เพื่อป้องกันการบล็อก CORS ของเบราว์เซอร์)', 'warning');
+    Swal.fire('ต้องเชื่อมต่อ Google Apps Script', 'กรุณาตั้งค่า Google Apps Script Web App URL ก่อนใช้งานส่ง LINE Messaging API', 'warning');
     return;
   }
   if (!appState.lineConfig.token || !appState.lineConfig.targetId) {
