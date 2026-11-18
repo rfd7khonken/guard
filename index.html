@@ -276,8 +276,8 @@
             <button id="btnAutoGenerate" class="btn btn-success admin-only" onclick="confirmGenerateMonth()">
               <i class="bi bi-arrow-repeat me-1"></i> คำนวณจัดเวรเดือนนี้อัตโนมัติ (นับต่อจากเดือนเดิม)
             </button>
-            <button id="btnResetNov" class="btn btn-outline-success admin-only" onclick="restoreNov2569Official()">
-              <i class="bi bi-file-earmark-check me-1"></i> โหลดข้อมูลคำสั่ง 10/2569 (พ.ย. 69)
+            <button id="btnResetOct" class="btn btn-outline-success admin-only" onclick="restoreOct2026Official()">
+              <i class="bi bi-file-earmark-check me-1"></i> โหลดข้อมูล ต.ค. 69 (ตั้งต้น)
             </button>
             <button id="btnSendMonthLine" class="btn btn-primary admin-only" onclick="sendMonthlyLineSummary()">
               <i class="bi bi-line me-1"></i> ส่งสรุปเวรเดือนนี้เข้า LINE
@@ -471,7 +471,7 @@
 
         <div id="printableArea" class="official-doc shadow-sm">
           <div class="text-center mb-3">
-            <h5 class="fw-bold mb-1" id="docTitleLine1">บัญชีรายชื่อผู้อยู่เวรยาม (เวลากลางวัน วันหยุดราชการ) ประจำเดือน พฤศจิกายน ๒๕๖๙</h5>
+            <h5 class="fw-bold mb-1" id="docTitleLine1">บัญชีรายชื่อผู้อยู่เวรยาม (เวลากลางวัน วันหยุดราชการ) ประจำเดือน ตุลาคม ๒๕๖๙</h5>
             <h6 class="fw-bold mb-0" id="docTitleLine2">คำสั่งศูนย์ป่าไม้ขอนแก่น ที่ ๑๐/๒๕๖๙ ลงวันที่ ๓๐ ตุลาคม พ.ศ. ๒๕๖๙</h6>
           </div>
           <table class="table table-bordered text-center mb-0">
@@ -748,10 +748,10 @@
 
 <script>
 // =========================================================================
-// 1. INITIAL DATA & CONSTANTS (เริ่มต้นอ้างอิงจาก พ.ย. 2569 เป็นต้นไป)
+// 1. INITIAL DATA & CONSTANTS (เริ่มต้นอ้างอิงจากเดือนตุลาคม 2569)
 // =========================================================================
-const STORAGE_KEY = 'kk_forestry_duty_roster_v3';
-const SESSION_KEY = 'kk_forestry_session_v3';
+const STORAGE_KEY = 'kk_forestry_duty_roster_v4';
+const SESSION_KEY = 'kk_forestry_session_v4';
 
 const THAI_MONTHS = [
   'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
@@ -772,7 +772,7 @@ const DEFAULT_DAY_MEMBERS = [
   { id: 'D8', name: 'นางสาวอรวรรณ นพเก้า', phone: '092 989 3264' }
 ];
 
-// ชุดเวรกลางคืน 7 คน (เวลา 16.30 - 08.30 น.)
+// ชุดเวรกลางคืน 7 คน (เวลา 16.30 - 08.30 น.) [ตามลำดับ N1-N7]
 const DEFAULT_NIGHT_MEMBERS = [
   { id: 'N1', name: 'นายสุภทรชัย ภัทรธรรม', phone: '082 229 2050' },
   { id: 'N2', name: 'นายจตุพล อุทยานสุทธิ', phone: '061 514 1774' },
@@ -785,16 +785,13 @@ const DEFAULT_NIGHT_MEMBERS = [
 
 // วันหยุดราชการไทย (พ.ศ. 2569 - 2570)
 const DEFAULT_HOLIDAYS = {
+  '2026-10-13': 'วันคล้ายวันสวรรคต ร.9',
+  '2026-10-23': 'วันปิยมหาราช',
   '2026-12-05': 'วันคล้ายวันพระบรมราชสมภพ ร.9 / วันพ่อแห่งชาติ',
   '2026-12-07': 'ชดเชยวันคล้ายวันพระบรมราชสมภพ ร.9',
   '2026-12-10': 'วันรัฐธรรมนูญ',
   '2026-12-31': 'วันสิ้นปี',
-  '2027-01-01': 'วันขึ้นปีใหม่',
-  '2027-02-22': 'วันมาฆบูชา',
-  '2027-04-06': 'วันจักรี',
-  '2027-04-13': 'วันสงกรานต์',
-  '2027-04-14': 'วันสงกรานต์',
-  '2027-04-15': 'วันสงกรานต์'
+  '2027-01-01': 'วันขึ้นปีใหม่'
 };
 
 // บัญชีผู้ใช้เริ่มต้น
@@ -803,40 +800,31 @@ const DEFAULT_USERS = [
   { username: 'user', password: 'user1234', fullname: 'เจ้าหน้าที่ทั่วไป (ดูตารางเวร)', role: 'VIEWER' }
 ];
 
-// สร้างข้อมูลเดือนพฤศจิกายน 2569 (2026-11) ตามคำสั่ง 10/2569 เป็นฐานตั้งต้น
-function buildOfficialNov2026Schedule() {
+// สร้างฐานข้อมูลเดือนตุลาคม 2569 (2026-10) ตามภาพอ้างอิง (30 ต.ค. นายปฏิพัทธ์ ชาญสุวรรณ)
+function buildOfficialOct2026Schedule() {
   const schedule = {};
-  const dayMap = {
-    1: 'D1', 7: 'D2', 8: 'D3', 14: 'D4', 15: 'D5', 21: 'D6', 22: 'D7', 28: 'D8', 29: 'D1'
-  };
-
-  const nightMap = {
-    1: 'N1', 2: 'N2', 3: 'N3', 4: 'N4', 5: 'N5', 6: 'N6', 7: 'N7',
-    8: 'N2', 9: 'N3', 10: 'N4', 11: 'N5', 12: 'N6', 13: 'N7', 14: 'N1',
-    15: 'N3', 16: 'N4', 17: 'N5', 18: 'N6', 19: 'N7', 20: 'N1', 21: 'N2',
-    22: 'N4', 23: 'N5', 24: 'N6', 25: 'N7', 26: 'N1', 27: 'N2', 28: 'N3',
-    29: 'N5', 30: 'N6'
-  };
-
-  for (let d = 1; d <= 30; d++) {
+  // หมุนเวียนกลางคืน N1-N7 ต่อเนื่องไปเรื่อยๆ จนถึงวันที่ 30 ต.ค. เป็น นายปฏิพัทธ์ (N6) และ 31 ต.ค. เป็น นายวิทวัฒน์ (N7)
+  const nightMemberIds = ['N1', 'N2', 'N3', 'N4', 'N5', 'N6', 'N7', 'N1', 'N2', 'N3', 'N4', 'N5', 'N6', 'N7', 'N1', 'N2', 'N3', 'N4', 'N5', 'N6', 'N7', 'N1', 'N2', 'N3', 'N4', 'N5', 'N6', 'N7', 'N1', 'N6', 'N7'];
+  
+  for (let d = 1; d <= 31; d++) {
     const dd = String(d).padStart(2, '0');
-    const dateKey = `2026-11-${dd}`;
+    const dateKey = `2026-10-${dd}`;
     schedule[dateKey] = {
-      dayMemberId: dayMap[d] || null,
-      nightMemberId: nightMap[d] || null,
+      dayMemberId: null,
+      nightMemberId: nightMemberIds[d - 1],
       overridden: false
     };
   }
   return schedule;
 }
 
-// สถานะหลักของแอปพลิเคชัน (กำหนดเริ่มต้นที่ พ.ย. 2569)
+// สถานะหลักของแอปพลิเคชัน (เริ่มต้นที่ ตุลาคม 2569 เพื่อให้พฤศจิกายนนับต่อได้อย่างถูกต้อง)
 let appState = {
   dayMembers: JSON.parse(JSON.stringify(DEFAULT_DAY_MEMBERS)),
   nightMembers: JSON.parse(JSON.stringify(DEFAULT_NIGHT_MEMBERS)),
   holidays: { ...DEFAULT_HOLIDAYS },
   schedules: {
-    '2026-11': buildOfficialNov2026Schedule()
+    '2026-10': buildOfficialOct2026Schedule()
   },
   users: JSON.parse(JSON.stringify(DEFAULT_USERS)),
   logs: [],
@@ -849,7 +837,7 @@ let appState = {
 
 let currentUser = null;
 let selectedYear = 2026;
-let selectedMonth = 11;
+let selectedMonth = 10;
 let activeModalDateKey = null;
 let dayChartInstance = null;
 let nightChartInstance = null;
@@ -876,8 +864,8 @@ function loadStateFromLocal() {
     try {
       const parsed = JSON.parse(raw);
       appState = { ...appState, ...parsed };
-      if (!appState.schedules['2026-11']) {
-        appState.schedules['2026-11'] = buildOfficialNov2026Schedule();
+      if (!appState.schedules['2026-10']) {
+        appState.schedules['2026-10'] = buildOfficialOct2026Schedule();
       }
     } catch (e) {
       console.error('Error parsing local state:', e);
@@ -995,13 +983,12 @@ function updateSyncBadge() {
 }
 
 // =========================================================================
-// 4. SMART CONTINUOUS SHIFT ROTATION ALGORITHM (เริ่มจาก พ.ย. 2569 เป็นต้นไป)
+// 4. SMART CONTINUOUS SHIFT ROTATION ALGORITHM (นับต่อจากเดือนเดิมอัตโนมัติ)
 // =========================================================================
 function populateMonthSelector() {
   const sel = document.getElementById('monthSelector');
   sel.innerHTML = '';
-  // เริ่มต้นรายการเดือนจากพฤศจิกายน 2569 (2026-11)
-  const startYear = 2026, startMonth = 11;
+  const startYear = 2026, startMonth = 10; // เริ่มต้นจากตุลาคม 2569
   for (let i = 0; i < 15; i++) {
     let m = startMonth + i;
     let y = startYear + Math.floor((m - 1) / 12);
@@ -1072,11 +1059,11 @@ function confirmGenerateMonth() {
   });
 }
 
-function restoreNov2569Official() {
+function restoreOct2026Official() {
   if (currentUser.role !== 'ADMIN') return;
   Swal.fire({
-    title: 'โหลดข้อมูลคำสั่ง 10/2569?',
-    text: 'รีเซ็ตตารางเดือนพฤศจิกายน 2569 ให้ตรงตามหนังสือคำสั่งศูนย์ป่าไม้ขอนแก่น ที่ 10/2569',
+    title: 'โหลดข้อมูลตั้งต้น ตุลาคม 2569?',
+    text: 'รีเซ็ตตารางเดือนตุลาคม 2569 ให้ถูกต้องตามลำดับ (สิ้นสุดที่ นายปฏิพัทธ์ และ นายวิทวัฒน์)',
     icon: 'warning',
     showCancelButton: true,
     confirmButtonColor: '#166534',
@@ -1085,16 +1072,16 @@ function restoreNov2569Official() {
   }).then(res => {
     if (res.isConfirmed) {
       selectedYear = 2026;
-      selectedMonth = 11;
-      document.getElementById('monthSelector').value = '2026-11';
-      appState.schedules['2026-11'] = buildOfficialNov2026Schedule();
+      selectedMonth = 10;
+      document.getElementById('monthSelector').value = '2026-10';
+      appState.schedules['2026-10'] = buildOfficialOct2026Schedule();
       saveState({
         action: 'GENERATE_SHIFT',
-        details: 'โหลดข้อมูลตารางเวรมาตรฐานตามคำสั่ง 10/2569 (พฤศจิกายน 2569)',
-        targetDate: '2026-11'
+        details: 'โหลดข้อมูลตารางเวรตั้งต้นเดือนตุลาคม 2569',
+        targetDate: '2026-10'
       });
       renderAllViews();
-      Swal.fire('เรียบร้อย', 'โหลดข้อมูลตามหนังสือคำสั่ง 10/2569 แล้ว', 'success');
+      Swal.fire('เรียบร้อย', 'โหลดข้อมูลตั้งต้นเดือนตุลาคม 2569 เรียบร้อยแล้ว', 'success');
     }
   });
 }
