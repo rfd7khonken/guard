@@ -748,7 +748,7 @@
 
 <script>
 // =========================================================================
-// 1. INITIAL DATA & CONSTANTS (อ้างอิงคำสั่งศูนย์ป่าไม้ขอนแก่น ที่ 10/2569)
+// 1. INITIAL DATA & CONSTANTS (เริ่มต้นอ้างอิงจาก พ.ย. 2569 เป็นต้นไป)
 // =========================================================================
 const STORAGE_KEY = 'kk_forestry_duty_roster_v3';
 const SESSION_KEY = 'kk_forestry_session_v3';
@@ -803,7 +803,7 @@ const DEFAULT_USERS = [
   { username: 'user', password: 'user1234', fullname: 'เจ้าหน้าที่ทั่วไป (ดูตารางเวร)', role: 'VIEWER' }
 ];
 
-// สร้างข้อมูลเดือนพฤศจิกายน 2569 (2026-11) ให้ตรงตามหนังสือคำสั่ง 10/2569 100%
+// สร้างข้อมูลเดือนพฤศจิกายน 2569 (2026-11) ตามคำสั่ง 10/2569 เป็นฐานตั้งต้น
 function buildOfficialNov2026Schedule() {
   const schedule = {};
   const dayMap = {
@@ -830,7 +830,7 @@ function buildOfficialNov2026Schedule() {
   return schedule;
 }
 
-// สถานะหลักของแอปพลิเคชัน
+// สถานะหลักของแอปพลิเคชัน (กำหนดเริ่มต้นที่ พ.ย. 2569)
 let appState = {
   dayMembers: JSON.parse(JSON.stringify(DEFAULT_DAY_MEMBERS)),
   nightMembers: JSON.parse(JSON.stringify(DEFAULT_NIGHT_MEMBERS)),
@@ -995,12 +995,13 @@ function updateSyncBadge() {
 }
 
 // =========================================================================
-// 4. SMART CONTINUOUS SHIFT ROTATION ALGORITHM (นับต่อจากเดือนเดิมอัตโนมัติ)
+// 4. SMART CONTINUOUS SHIFT ROTATION ALGORITHM (เริ่มจาก พ.ย. 2569 เป็นต้นไป)
 // =========================================================================
 function populateMonthSelector() {
   const sel = document.getElementById('monthSelector');
   sel.innerHTML = '';
-  const startYear = 2026, startMonth = 10;
+  // เริ่มต้นรายการเดือนจากพฤศจิกายน 2569 (2026-11)
+  const startYear = 2026, startMonth = 11;
   for (let i = 0; i < 15; i++) {
     let m = startMonth + i;
     let y = startYear + Math.floor((m - 1) / 12);
