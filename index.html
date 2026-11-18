@@ -274,7 +274,7 @@
 
           <div class="col-12 col-md-8 col-lg-9 d-flex flex-wrap gap-2 justify-content-md-end align-items-end">
             <button id="btnAutoGenerate" class="btn btn-success admin-only" onclick="confirmGenerateMonth()">
-              <i class="bi bi-arrow-repeat me-1"></i> คำนวณจัดเวรเดือนนี้อัตโนมัติ
+              <i class="bi bi-arrow-repeat me-1"></i> คำนวณจัดเวรเดือนนี้อัตโนมัติ (นับต่อจากเดือนเดิม)
             </button>
             <button id="btnResetNov" class="btn btn-outline-success admin-only" onclick="restoreNov2569Official()">
               <i class="bi bi-file-earmark-check me-1"></i> โหลดข้อมูลคำสั่ง 10/2569 (พ.ย. 69)
@@ -384,7 +384,7 @@
               <div class="card-body">
                 <div class="text-muted small">เฉลี่ยเวรกลางคืน/คน</div>
                 <h3 class="fw-bold mb-0 text-success" id="statAvgNight">0</h3>
-                <small class="text-muted">หมุนเวียนไม่ซ้ำวันในสัปดาห์</small>
+                <small class="text-muted">หมุนเวียนต่อเนื่องข้ามเดือน</small>
               </div>
             </div>
           </div>
@@ -760,7 +760,7 @@ const THAI_MONTHS = [
 
 const THAI_DAYS_FULL = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
 
-// ชุดเวรกลางวัน 8 คน (เวลา 08.30 - 16.30 น. วันหยุดราชการ) ตามภาพ 331029.jpg
+// ชุดเวรกลางวัน 8 คน (เวลา 08.30 - 16.30 น. วันหยุดราชการ)
 const DEFAULT_DAY_MEMBERS = [
   { id: 'D1', name: 'นางสาวศิริพร หอมสมบัติ', phone: '089 365 6156' },
   { id: 'D2', name: 'นางสาวรมณีย์ ทองดี', phone: '095 228 8895' },
@@ -772,7 +772,7 @@ const DEFAULT_DAY_MEMBERS = [
   { id: 'D8', name: 'นางสาวอรวรรณ นพเก้า', phone: '092 989 3264' }
 ];
 
-// ชุดเวรกลางคืน 7 คน (เวลา 16.30 - 08.30 น.) ตามภาพ 331028.jpg
+// ชุดเวรกลางคืน 7 คน (เวลา 16.30 - 08.30 น.)
 const DEFAULT_NIGHT_MEMBERS = [
   { id: 'N1', name: 'นายสุภทรชัย ภัทรธรรม', phone: '082 229 2050' },
   { id: 'N2', name: 'นายจตุพล อุทยานสุทธิ', phone: '061 514 1774' },
@@ -995,7 +995,7 @@ function updateSyncBadge() {
 }
 
 // =========================================================================
-// 4. SMART CONTINUOUS SHIFT ROTATION ALGORITHM (คำนวณต่อเนื่องข้ามเดือน)
+// 4. SMART CONTINUOUS SHIFT ROTATION ALGORITHM (นับต่อจากเดือนเดิมอัตโนมัติ)
 // =========================================================================
 function populateMonthSelector() {
   const sel = document.getElementById('monthSelector');
@@ -1056,7 +1056,7 @@ function confirmGenerateMonth() {
   const monthName = `${THAI_MONTHS[selectedMonth - 1]} ${selectedYear + 543}`;
   Swal.fire({
     title: `คำนวณจัดตารางเวรอัตโนมัติ?`,
-    text: `ระบบจะคำนวณคิวเวรกลางวันและกลางคืนของเดือน ${monthName} ต่อเนื่องจากเดือนก่อนหน้า โดยไม่ให้เข้าซ้ำวันในสัปดาห์เดียวกัน`,
+    text: `ระบบจะคำนวณคิวเวรกลางวันและกลางคืนของเดือน ${monthName} ต่อเนื่องจากเดือนก่อนหน้าโดยอัตโนมัติ`,
     icon: 'question',
     showCancelButton: true,
     confirmButtonColor: '#166534',
@@ -1066,7 +1066,7 @@ function confirmGenerateMonth() {
     if (res.isConfirmed) {
       generateMonthSchedule(selectedYear, selectedMonth, true);
       renderAllViews();
-      Swal.fire('สำเร็จ!', `จัดตารางเวรเดือน ${monthName} เรียบร้อยแล้ว`, 'success');
+      Swal.fire('สำเร็จ!', `จัดตารางเวรเดือน ${monthName} ต่อเนื่องจากเดือนเดิมเรียบร้อยแล้ว`, 'success');
     }
   });
 }
@@ -1098,7 +1098,7 @@ function restoreNov2569Official() {
   });
 }
 
-// อัลกอริทึมจัดเวรต่อเนื่องข้ามเดือน + Sliding Window ป้องกันซ้ำ 6 วันล่าสุด (แก้ปัญหาเวรกลางคืนซ้ำวันเดิมในสัปดาห์)
+// อัลกอริทึมจัดเวรต่อเนื่องข้ามเดือน (ค้นหาคิวถัดจากวันสุดท้ายของเดือนก่อนหน้า)
 function generateMonthSchedule(year, month, logAction = true) {
   const monthKey = `${year}-${String(month).padStart(2, '0')}`;
   const daysInMonth = new Date(year, month, 0).getDate();
@@ -1113,13 +1113,13 @@ function generateMonthSchedule(year, month, logAction = true) {
 
   if (prevSchedule && appState.dayMembers.length > 0) {
     const prevDays = Object.keys(prevSchedule).sort();
-    for (let i = prevDays.length - 1; i >= 0; i--) {
-      const dId = prevSchedule[prevDays[i]].dayMemberId;
-      if (dId) {
-        const idx = appState.dayMembers.findIndex(m => m.id === dId);
+    if (prevDays.length > 0) {
+      const lastDayKey = prevDays[prevDays.length - 1];
+      const lastDayMemberId = prevSchedule[lastDayKey].dayMemberId;
+      if (lastDayMemberId) {
+        const idx = appState.dayMembers.findIndex(m => m.id === lastDayMemberId);
         if (idx !== -1) {
           nextDayIdx = (idx + 1) % appState.dayMembers.length;
-          break;
         }
       }
     }
@@ -1127,13 +1127,13 @@ function generateMonthSchedule(year, month, logAction = true) {
 
   if (prevSchedule && appState.nightMembers.length > 0) {
     const prevDays = Object.keys(prevSchedule).sort();
-    for (let i = prevDays.length - 1; i >= 0; i--) {
-      const nId = prevSchedule[prevDays[i]].nightMemberId;
-      if (nId) {
-        const idx = appState.nightMembers.findIndex(m => m.id === nId);
+    if (prevDays.length > 0) {
+      const lastDayKey = prevDays[prevDays.length - 1];
+      const lastNightMemberId = prevSchedule[lastDayKey].nightMemberId;
+      if (lastNightMemberId) {
+        const idx = appState.nightMembers.findIndex(m => m.id === lastNightMemberId);
         if (idx !== -1) {
           nextNightIdx = (idx + 1) % appState.nightMembers.length;
-          break;
         }
       }
     }
@@ -1153,7 +1153,6 @@ function generateMonthSchedule(year, month, logAction = true) {
   }
 
   for (let d = 1; d <= daysInMonth; d++) {
-    const dateObj = new Date(year, month - 1, d);
     const dd = String(d).padStart(2, '0');
     const dateKey = `${monthKey}-${dd}`;
 
@@ -1191,7 +1190,7 @@ function generateMonthSchedule(year, month, logAction = true) {
   if (logAction) {
     saveState({
       action: 'GENERATE_SHIFT',
-      details: `คำนวณจัดตารางเวรอัตโนมัติประจำเดือน ${THAI_MONTHS[month - 1]} ${year + 543}`,
+      details: `คำนวณจัดตารางเวรอัตโนมัติ (นับต่อจากเดือนเดิม) ประจำเดือน ${THAI_MONTHS[month - 1]} ${year + 543}`,
       targetDate: monthKey
     });
   } else {
