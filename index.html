@@ -3,112 +3,135 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบจัดตารางเวรอัตโนมัติ (Fair Duty Rota & LINE Notify)</title>
+    <title>ระบบจัดตารางเวรยาม ศูนย์ป่าไม้ขอนแก่น (กลางวัน / กลางคืน)</title>
     <!-- Bootstrap 5.3 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- FontAwesome 6 Icons -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Google Fonts Prompt -->
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- Google Fonts: Prompt & Sarabun (สำหรับแบบฟอร์มราชการ) -->
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
     
     <style>
         :root {
             --bs-body-font-family: 'Prompt', sans-serif;
-            --primary-color: #2563eb;
+            --primary-color: #1e40af;
             --sidebar-bg: #0f172a;
+            --day-shift-bg: #fef3c7;
+            --day-shift-border: #f59e0b;
+            --day-shift-text: #92400e;
+            --night-shift-bg: #1e1b4b;
+            --night-shift-text: #e0e7ff;
             --card-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.025);
         }
         body {
             font-family: 'Prompt', sans-serif;
-            background-color: #f8fafc;
-            color: #334155;
+            background-color: #f1f5f9;
+            color: #1e293b;
             min-height: 100vh;
         }
         .sidebar {
             background-color: var(--sidebar-bg);
             min-height: 100vh;
             color: #fff;
-            box-shadow: 4px 0 10px rgba(0, 0, 0, 0.05);
+            box-shadow: 4px 0 10px rgba(0, 0, 0, 0.08);
         }
         .nav-link {
             color: #94a3b8;
             border-radius: 10px;
             margin-bottom: 6px;
-            padding: 12px 18px;
+            padding: 12px 16px;
             font-weight: 500;
-            transition: all 0.25s ease;
+            transition: all 0.2s ease;
         }
         .nav-link:hover, .nav-link.active {
             color: #ffffff;
-            background-color: var(--primary-color);
-            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+            background-color: #2563eb;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
         }
         .card {
             border: none;
             border-radius: 16px;
             box-shadow: var(--card-shadow);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        /* Calendar Styling */
+        .calendar-table {
+            table-layout: fixed;
+            width: 100%;
         }
         .calendar-table th {
             text-align: center;
-            background-color: #f1f5f9;
-            padding: 14px 8px;
+            background-color: #e2e8f0;
+            padding: 12px 6px;
             font-weight: 600;
+            font-size: 0.9rem;
         }
         .calendar-day {
-            min-height: 120px;
-            height: 120px;
+            height: 146px;
             vertical-align: top;
-            transition: all 0.2s ease;
-            position: relative;
+            transition: all 0.15s ease;
             cursor: pointer;
             background-color: #ffffff;
+            padding: 6px !important;
         }
         .calendar-day:hover {
-            background-color: #f1f5f9 !important;
-            transform: scale(0.995);
+            background-color: #f8fafc !important;
+            box-shadow: inset 0 0 0 2px #3b82f6;
+        }
+        .weekend-bg {
+            background-color: #fffbeb;
         }
         .today-highlight {
-            background-color: #eff6ff !important;
-            border: 2px solid #3b82f6 !important;
+            box-shadow: inset 0 0 0 2.5px #ef4444 !important;
         }
-        .badge-shift {
-            font-size: 0.82rem;
-            padding: 7px 10px;
-            border-radius: 8px;
-            margin-top: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+        .shift-pill-day {
+            background-color: var(--day-shift-bg);
+            border-left: 3.5px solid var(--day-shift-border);
+            color: var(--day-shift-text);
+            font-size: 0.73rem;
+            padding: 4px 6px;
+            border-radius: 6px;
+            margin-bottom: 4px;
+            font-weight: 600;
+            line-height: 1.25;
+        }
+        .shift-pill-workday {
+            background-color: #f1f5f9;
+            border-left: 3.5px solid #cbd5e1;
+            color: #64748b;
+            font-size: 0.71rem;
+            padding: 4px 6px;
+            border-radius: 6px;
+            margin-bottom: 4px;
+        }
+        .shift-pill-night {
+            background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+            color: #ffffff;
+            font-size: 0.73rem;
+            padding: 4px 6px;
+            border-radius: 6px;
             font-weight: 500;
+            line-height: 1.25;
+        }
+        .shift-phone-mini {
+            font-size: 0.65rem;
+            opacity: 0.85;
+            display: block;
+            font-weight: 400;
         }
         .avatar-circle {
-            width: 42px;
-            height: 42px;
+            width: 38px;
+            height: 38px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: 700;
             color: white;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.15);
-        }
-        .toast-container {
-            position: fixed;
-            bottom: 24px;
-            right: 24px;
-            z-index: 1080;
-        }
-        .override-tag {
-            font-size: 0.65rem;
-            background-color: #f59e0b;
-            color: white;
-            padding: 2px 6px;
-            border-radius: 4px;
-            margin-left: 4px;
+            flex-shrink: 0;
         }
         .line-green-btn {
             background-color: #06c755;
@@ -120,6 +143,54 @@
             background-color: #05b34c;
             color: white;
         }
+        /* Official Print Form Styling */
+        .official-doc {
+            font-family: 'Sarabun', sans-serif;
+            color: #000;
+            background: #fff;
+            padding: 32px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+        }
+        .official-doc table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        .official-doc th, .official-doc td {
+            border: 1px solid #000;
+            padding: 8px 10px;
+            font-size: 15px;
+        }
+        .official-doc th {
+            background-color: #f8fafc;
+            text-align: center;
+            font-weight: 700;
+        }
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #printable-area, #printable-area * {
+                visibility: visible;
+            }
+            #printable-area {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                border: none !important;
+                padding: 0 !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+        }
+        @media (max-width: 768px) {
+            .calendar-table {
+                min-width: 780px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -127,29 +198,36 @@
 <div class="container-fluid">
     <div class="row">
         <!-- Sidebar Navigation -->
-        <div class="col-md-3 col-lg-2 sidebar p-3 collapse d-md-block" id="sidebarMenu">
-            <div class="d-flex align-items-center mb-4 px-2 text-white text-decoration-none">
-                <i class="fa-solid fa-calendar-check fa-2x text-primary me-3"></i>
+        <div class="col-md-3 col-lg-2 sidebar p-3 collapse d-md-block no-print" id="sidebarMenu">
+            <div class="d-flex align-items-center mb-3 px-2 text-white">
+                <div class="bg-primary rounded-3 p-2 me-2">
+                    <i class="fa-solid fa-tree fa-lg text-white"></i>
+                </div>
                 <div>
-                    <div class="fw-bold fs-5 leading-tight">ระบบตารางเวร</div>
-                    <small class="text-muted" style="font-size: 0.75rem;">7-Member Fair Duty Rota</small>
+                    <div class="fw-bold fs-6 leading-tight">ศูนย์ป่าไม้ขอนแก่น</div>
+                    <small class="text-info" style="font-size: 0.72rem;">ระบบตารางเวร 24 ชม.</small>
                 </div>
             </div>
             <hr class="text-secondary opacity-25">
             <ul class="nav nav-pills flex-column mb-auto">
                 <li class="nav-item">
-                    <a href="#" class="nav-link active" onclick="switchTab('dashboard', event)">
-                        <i class="fa-solid fa-chart-pie me-2"></i> ภาพรวมระบบ
+                    <a href="#" class="nav-link active" onclick="switchTab('schedule', event)">
+                        <i class="fa-solid fa-calendar-days me-2"></i> ปฏิทินเวร (กลางวัน/คืน)
                     </a>
                 </li>
                 <li>
-                    <a href="#" class="nav-link" onclick="switchTab('schedule', event)">
-                        <i class="fa-solid fa-calendar-days me-2"></i> ตารางเวรประจำเดือน
+                    <a href="#" class="nav-link" onclick="switchTab('dashboard', event)">
+                        <i class="fa-solid fa-chart-pie me-2"></i> Dashboard & สถิติ
+                    </a>
+                </li>
+                <li>
+                    <a href="#" class="nav-link" onclick="switchTab('official', event)">
+                        <i class="fa-solid fa-file-lines me-2"></i> แบบฟอร์มคำสั่งราชการ
                     </a>
                 </li>
                 <li>
                     <a href="#" class="nav-link" onclick="switchTab('members', event)">
-                        <i class="fa-solid fa-users me-2"></i> จัดการสมาชิก (7 คน)
+                        <i class="fa-solid fa-users me-2"></i> จัดการสมาชิก & วันหยุด
                     </a>
                 </li>
                 <li>
@@ -159,128 +237,72 @@
                 </li>
             </ul>
             <hr class="text-secondary opacity-25">
-            <div class="p-3 bg-dark rounded-3 text-center small text-muted">
-                <i class="fa-solid fa-database text-success me-1"></i> <span id="sync-mode-indicator">LocalStorage Mode</span>
+            <div class="p-3 bg-dark rounded-3 small">
+                <div class="text-warning mb-1"><i class="fa-solid fa-sun me-1"></i> กลางวัน: 08.30-16.30</div>
+                <div class="text-info mb-2"><i class="fa-solid fa-moon me-1"></i> กลางคืน: 16.30-08.30</div>
+                <div class="border-top border-secondary pt-2 text-center">
+                    <i class="fa-solid fa-database text-success me-1"></i> <span id="sync-mode-indicator" class="text-light">LocalStorage</span>
+                </div>
             </div>
         </div>
 
         <!-- Main Content Area -->
         <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
             
-            <!-- Mobile Navigation Toggle -->
-            <div class="d-md-none d-flex justify-content-between align-items-center mb-3 p-3 bg-white rounded-3 shadow-sm">
-                <h5 class="mb-0 fw-bold text-primary"><i class="fa-solid fa-calendar-check me-2"></i>ระบบตารางเวร</h5>
+            <!-- Mobile Header -->
+            <div class="d-md-none d-flex justify-content-between align-items-center mb-3 p-3 bg-white rounded-3 shadow-sm no-print">
+                <h6 class="mb-0 fw-bold text-primary"><i class="fa-solid fa-tree me-2"></i>ตารางเวรศูนย์ป่าไม้ขอนแก่น</h6>
                 <button class="btn btn-primary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu">
-                    <i class="fa-solid fa-bars me-1"></i> เมนู
+                    <i class="fa-solid fa-bars"></i> เมนู
                 </button>
             </div>
 
-            <!-- TAB 1: DASHBOARD -->
-            <div id="tab-dashboard" class="tab-content">
-                <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+            <!-- TAB 1: CALENDAR SCHEDULE (DEFAULT VIEW) -->
+            <div id="tab-schedule" class="tab-content">
+                <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
                     <div>
-                        <h2 class="fw-bold mb-1"><i class="fa-solid fa-chart-line text-primary me-2"></i>ภาพรวมระบบ (Dashboard)</h2>
-                        <p class="text-muted mb-0">สรุปสถิติเวรประจำเดือน การกระจายความเท่าเทียม และตารางเวรล่วงหน้า</p>
+                        <h3 class="fw-bold mb-1"><i class="fa-solid fa-calendar-days text-primary me-2"></i>ตารางเวรประจำเดือน (กลางวัน - กลางคืน)</h3>
+                        <p class="text-muted small mb-0">คลิกที่วันที่ใดก็ได้เพื่อดูเบอร์โทรศัพท์ แก้ไขสลับเวร หรือส่งแจ้งเตือน LINE ทันที</p>
                     </div>
-                    <div class="d-flex gap-2">
-                        <button class="btn btn-outline-primary" onclick="recalculateShifts()"><i class="fa-solid fa-arrows-rotate me-1"></i> คำนวณเวรใหม่</button>
-                        <button class="btn line-green-btn" onclick="sendMonthToLine()"><i class="fa-brands fa-line me-1"></i> ส่งตารางเดือนนี้เข้า LINE</button>
+                    <div class="d-flex flex-wrap align-items-center gap-2">
+                        <div class="input-group input-group-sm" style="width: auto;">
+                            <span class="input-group-text fw-bold bg-white">เดือน/ปี:</span>
+                            <input type="month" id="month-picker" class="form-control" value="2026-11" onchange="onMonthChange()">
+                        </div>
+                        <button class="btn btn-primary btn-sm" onclick="autoGenerateCurrentMonth()" title="คำนวณจัดเวรอัตโนมัติสำหรับเดือนที่เลือก">
+                            <i class="fa-solid fa-wand-magic-sparkles me-1"></i> จัดเวรอัตโนมัติ
+                        </button>
+                        <button class="btn btn-outline-secondary btn-sm" onclick="resetToOrder10()" title="โหลดข้อมูลตามคำสั่งที่ 10/2569 (พ.ย. 2569)">
+                            <i class="fa-solid fa-rotate-left me-1"></i> ข้อมูลคำสั่ง 10/2569
+                        </button>
+                        <button class="btn line-green-btn btn-sm" onclick="sendMonthSummaryToLine()">
+                            <i class="fa-brands fa-line me-1"></i> ส่งตารางเดือนนี้
+                        </button>
                     </div>
                 </div>
 
-                <!-- Key Stat Cards -->
-                <div class="row g-3 mb-4">
-                    <div class="col-12 col-sm-6 col-xl-3">
-                        <div class="card p-3 bg-white border-start border-4 border-primary">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <div class="text-muted small">จำนวนสมาชิกทั้งหมด</div>
-                                    <div class="fs-3 fw-bold" id="dash-members-count">7 คน</div>
-                                </div>
-                                <i class="fa-solid fa-users text-primary fa-2x opacity-75"></i>
-                            </div>
+                <!-- Legend & Quick Holiday Toggle -->
+                <div class="card p-3 mb-3 bg-white">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                        <div class="d-flex flex-wrap gap-3 small align-items-center">
+                            <span class="d-flex align-items-center">
+                                <span class="badge me-1" style="background-color:#f59e0b;">☀️ กลางวัน (08.30-16.30)</span> เฉพาะวันหยุดราชการ
+                            </span>
+                            <span class="d-flex align-items-center">
+                                <span class="badge bg-secondary me-1">🏢 วันทำการปกติ</span> ไม่มีเวรกลางวัน
+                            </span>
+                            <span class="d-flex align-items-center">
+                                <span class="badge me-1" style="background-color:#312e81;">🌙 กลางคืน (16.30-08.30)</span> ปฏิบัติหน้าที่ทุกวัน (หมุนเวียน 7 คน)
+                            </span>
                         </div>
-                    </div>
-                    <div class="col-12 col-sm-6 col-xl-3">
-                        <div class="card p-3 bg-white border-start border-4 border-success">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <div class="text-muted small">ผู้เข้าเวรวันนี้</div>
-                                    <div class="fs-6 fw-bold text-success text-truncate" id="dash-today-duty" style="max-width: 150px;">-</div>
-                                </div>
-                                <i class="fa-solid fa-user-check text-success fa-2x opacity-75"></i>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-12 col-sm-6 col-xl-3">
-                        <div class="card p-3 bg-white border-start border-4 border-warning">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <div class="text-muted small">เงื่อนไขสัปดาห์</div>
-                                    <div class="fs-6 fw-bold text-dark">ไม่ซ้ำวัน / 1 วันต่อสัปดาห์</div>
-                                </div>
-                                <i class="fa-solid fa-calendar-week text-warning fa-2x opacity-75"></i>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-12 col-sm-6 col-xl-3">
-                        <div class="card p-3 bg-white border-start border-4 border-info">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <div class="text-muted small">ความเท่าเทียม</div>
-                                    <div class="fs-6 fw-bold text-info"><i class="fa-solid fa-circle-check text-success me-1"></i> กระจายเท่ากัน 100%</div>
-                                </div>
-                                <i class="fa-solid fa-scale-balanced text-info fa-2x opacity-75"></i>
-                            </div>
+                        <div class="small text-muted">
+                            <i class="fa-solid fa-hand-pointer text-primary me-1"></i> คลิกช่องวันเพื่อกำหนดวันหยุดพิเศษ / สลับเวร
                         </div>
                     </div>
                 </div>
 
-                <!-- Chart & Upcoming Duty List -->
-                <div class="row">
-                    <div class="col-lg-7 mb-4">
-                        <div class="card p-4 h-100">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h5 class="card-title fw-bold mb-0"><i class="fa-solid fa-chart-bar text-primary me-2"></i>จำนวนวันเข้าเวรต่อคน (เดือนนี้)</h5>
-                                <span class="badge bg-light text-dark border" id="chart-month-label">-</span>
-                            </div>
-                            <div style="position: relative; height: 280px;">
-                                <canvas id="dutyChart"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-5 mb-4">
-                        <div class="card p-4 h-100">
-                            <h5 class="card-title fw-bold mb-3"><i class="fa-solid fa-list-check text-primary me-2"></i>ตารางเวร 7 วันถัดไป (คลิกดู Pop-up)</h5>
-                            <ul class="list-group list-group-flush" id="upcoming-duty-list">
-                                <!-- JS Injected List -->
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- TAB 2: SCHEDULE (CALENDAR) -->
-            <div id="tab-schedule" class="tab-content d-none">
-                <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
-                    <div>
-                        <h2 class="fw-bold mb-1"><i class="fa-solid fa-calendar-days text-primary me-2"></i>ตารางเวรประจำเดือน</h2>
-                        <p class="text-muted mb-0">คลิกที่ช่องวันที่เพื่อดู **Pop-up สรุปเวร** หรือสลับเวร และส่ง LINE รายวัน</p>
-                    </div>
-                    <div class="d-flex align-items-center gap-2">
-                        <label for="month-picker" class="fw-bold text-nowrap">เลือกเดือน:</label>
-                        <input type="month" id="month-picker" class="form-control" onchange="renderCalendar(); updateChart();">
-                        <button class="btn btn-success text-nowrap" onclick="syncWithGoogleSheet()"><i class="fa-solid fa-cloud-arrow-up me-1"></i> Sync Sheets</button>
-                        <button class="btn line-green-btn text-nowrap" onclick="sendMonthToLine()"><i class="fa-brands fa-line me-1"></i> สรุปส่ง LINE</button>
-                    </div>
-                </div>
-
-                <div class="alert alert-primary d-flex align-items-center rounded-3 mb-4" role="alert">
-                    <i class="fa-solid fa-circle-info fa-lg me-3"></i>
-                    <div><b>เคล็ดลับการใช้งาน:</b> สามารถคลิกวันใดก็ได้ในตารางปฏิทินเพื่อเปิด Pop-up รายละเอียด สลับเปลี่ยนตัวผู้เข้าเวรเฉพาะวันนั้น หรือกดส่งแจ้งเตือนการเข้าเวรเข้า LINE ได้ทันที</div>
-                </div>
-
-                <div class="card p-3">
+                <!-- Responsive Calendar Table -->
+                <div class="card p-2 p-md-3">
                     <div class="table-responsive">
                         <table class="table table-bordered calendar-table mb-0">
                             <thead>
@@ -295,100 +317,314 @@
                                 </tr>
                             </thead>
                             <tbody id="calendar-body">
-                                <!-- Calendar Grid Injected via JS -->
+                                <!-- Calendar Cells Rendered via JS -->
                             </tbody>
                         </table>
                     </div>
                 </div>
             </div>
 
-            <!-- TAB 3: MEMBERS -->
-            <div id="tab-members" class="tab-content d-none">
-                <div class="d-flex justify-content-between align-items-center mb-4">
+            <!-- TAB 2: DASHBOARD & CHARTS -->
+            <div id="tab-dashboard" class="tab-content d-none">
+                <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
                     <div>
-                        <h2 class="fw-bold mb-1"><i class="fa-solid fa-users text-primary me-2"></i>จัดการรายชื่อสมาชิก</h2>
-                        <p class="text-muted mb-0">เพิ่ม/แก้ไข/ลบ รายชื่อสมาชิก และเลือกสีประจำตัว</p>
+                        <h3 class="fw-bold mb-1"><i class="fa-solid fa-chart-pie text-primary me-2"></i>Dashboard & สถิติการเข้าเวร</h3>
+                        <p class="text-muted small mb-0" id="dash-subtitle">สรุปความเท่าเทียมการเข้าเวรประจำเดือน พฤศจิกายน 2569</p>
                     </div>
-                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#memberModal" onclick="openAddMemberModal()">
-                        <i class="fa-solid fa-user-plus me-1"></i> เพิ่มสมาชิก
+                    <button class="btn btn-success btn-sm" onclick="syncWithGoogleSheet()">
+                        <i class="fa-solid fa-cloud-arrow-up me-1"></i> Sync ข้อมูลลง Google Sheets
                     </button>
                 </div>
 
-                <div class="card p-3">
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle">
-                            <thead class="table-light">
-                                <tr>
-                                    <th style="width: 80px;">ลำดับ</th>
-                                    <th>ชื่อ-นามสกุล</th>
-                                    <th>ตำแหน่ง / แผนก</th>
-                                    <th>สีประจำตัว</th>
-                                    <th class="text-center" style="width: 160px;">จัดการ</th>
-                                </tr>
-                            </thead>
-                            <tbody id="member-table-body">
-                                <!-- Dynamic Member List -->
-                            </tbody>
-                        </table>
+                <!-- KPI Cards -->
+                <div class="row g-3 mb-4">
+                    <div class="col-12 col-sm-6 col-xl-3">
+                        <div class="card p-3 border-start border-4 border-warning">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="text-muted small">ชุดเวรกลางวัน (วันหยุด)</div>
+                                    <div class="fs-4 fw-bold text-dark" id="kpi-day-members">8 คน</div>
+                                    <small class="text-warning fw-semibold">เวลา 08.30 - 16.30 น.</small>
+                                </div>
+                                <i class="fa-solid fa-sun fa-2x text-warning opacity-75"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-sm-6 col-xl-3">
+                        <div class="card p-3 border-start border-4 border-primary">
+                <!-- Dual Charts & Summary Table -->
+                <div class="row g-4 mb-4">
+                    <div class="col-lg-6">
+                        <div class="card p-4 h-100">
+                            <h6 class="fw-bold mb-3 text-warning"><i class="fa-solid fa-sun me-2"></i>สถิติเวรกลางวัน (เฉพาะวันหยุดราชการ)</h6>
+                            <div style="height: 260px; position: relative;">
+                                <canvas id="dayShiftChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="card p-4 h-100">
+                            <h6 class="fw-bold mb-3 text-primary"><i class="fa-solid fa-moon me-2"></i>สถิติเวรกลางคืน (ทุกวัน - หมุนเวียน 7 คน)</h6>
+                            <div style="height: 260px; position: relative;">
+                                <canvas id="nightShiftChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detailed Breakdown Table -->
+                <div class="card p-4">
+                    <h6 class="fw-bold mb-3"><i class="fa-solid fa-table-list text-primary me-2"></i>ตารางสรุปจำนวนวันและวันที่เข้าเวรของแต่ละคน (ตรวจสอบความเท่าเทียม)</h6>
+                    <div class="row g-4">
+                        <div class="col-lg-6">
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered align-middle mb-0">
+                                    <thead class="table-warning">
+                                        <tr>
+                                            <th>ชุดเวรกลางวัน (8 คน)</th>
+                                            <th class="text-center" style="width: 70px;">รวม</th>
+                                            <th>วันที่เข้าเวร</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="dash-day-summary"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered align-middle mb-0">
+                                    <thead class="table-primary">
+                                        <tr>
+                                            <th>ชุดเวรกลางคืน (7 คน)</th>
+                                            <th class="text-center" style="width: 70px;">รวม</th>
+                                            <th>วันที่เข้าเวร</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="dash-night-summary"></tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- TAB 4: SETTINGS & LINE/GAS -->
+            <!-- TAB 3: OFFICIAL GOVERNMENT DOCUMENT FORM -->
+            <div id="tab-official" class="tab-content d-none">
+                <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2 no-print">
+                    <div>
+                        <h3 class="fw-bold mb-1"><i class="fa-solid fa-file-lines text-primary me-2"></i>บัญชีรายชื่อผู้อยู่เวรยาม (แบบฟอร์มหนังสือคำสั่ง)</h3>
+                        <p class="text-muted small mb-0">รูปแบบเดียวกับคำสั่งศูนย์ป่าไม้ขอนแก่น ใช้เลขไทยครบถ้วน พร้อมสั่งพิมพ์หรือบันทึกเป็น PDF</p>
+                    </div>
+                    <div class="d-flex flex-wrap gap-2">
+                        <input type="text" id="quick-order-input" class="form-control form-control-sm" style="width: 340px;" onchange="updateOrderRefFromDoc(this.value)">
+                        <button class="btn btn-primary btn-sm" onclick="window.print()">
+                            <i class="fa-solid fa-print me-1"></i> พิมพ์ / บันทึก PDF
+                        </button>
+                    </div>
+                </div>
+            <!-- TAB 4: MEMBER MANAGEMENT & HOLIDAYS -->
+            <div id="tab-members" class="tab-content d-none">
+                <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+                    <div>
+                        <h3 class="fw-bold mb-1"><i class="fa-solid fa-users text-primary me-2"></i>จัดการรายชื่อเจ้าหน้าที่ & วันหยุดราชการ</h3>
+                        <p class="text-muted small mb-0">จัดลำดับคิว 1-8 (กลางวัน) และ 1-7 (กลางคืน) พร้อมกำหนดวันหยุดนักขัตฤกษ์ประจำเดือน</p>
+                    </div>
+                    <button class="btn btn-primary" onclick="openMemberModal()">
+                        <i class="fa-solid fa-user-plus me-1"></i> เพิ่มรายชื่อเจ้าหน้าที่
+                    </button>
+                </div>
+
+                <div class="row g-4 mb-4">
+                    <!-- Day Shift Members -->
+                    <div class="col-lg-6">
+                        <div class="card p-3 border-top border-4 border-warning h-100">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-sun text-warning me-2"></i>ชุดเวรกลางวัน (08.30 - 16.30 น.)</h5>
+                                <span class="badge bg-warning text-dark" id="badge-day-count">8 คน</span>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th style="width: 45px;">คิว</th>
+                                            <th>ชื่อ-นามสกุล</th>
+                                            <th>เบอร์โทรศัพท์</th>
+                                            <th class="text-center" style="width: 135px;">ลำดับ / จัดการ</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="day-members-tbody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Night Shift Members -->
+                    <div class="col-lg-6">
+                        <div class="card p-3 border-top border-4 border-primary h-100">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-moon text-primary me-2"></i>ชุดเวรกลางคืน (16.30 - 08.30 น.)</h5>
+                                <span class="badge bg-primary" id="badge-night-count">7 คน</span>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th style="width: 45px;">คิว</th>
+                                            <th>ชื่อ-นามสกุล</th>
+                                            <th>เบอร์โทรศัพท์</th>
+                                            <th class="text-center" style="width: 135px;">ลำดับ / จัดการ</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="night-members-tbody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Holiday Manager Card -->
+                <div class="card p-4">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+                        <div>
+                            <h5 class="fw-bold mb-1"><i class="fa-solid fa-calendar-xmark text-danger me-2"></i>วันหยุดราชการประจำเดือน <span id="holiday-mgr-month" class="text-primary"></span></h5>
+                            <p class="text-muted small mb-0">วันเสาร์-อาทิตย์ และวันหยุดนักขัตฤกษ์ด้านล่าง จะถูกจัดให้มี <b>เวรกลางวัน (08.30-16.30 น.)</b> โดยอัตโนมัติ</p>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <input type="date" id="new-holiday-date" class="form-control form-control-sm">
+                            <input type="text" id="new-holiday-name" class="form-control form-control-sm" placeholder="ชื่อวันหยุด เช่น วันรัฐธรรมนูญ">
+                            <button class="btn btn-danger btn-sm text-nowrap" onclick="addCustomHoliday()">
+                                <i class="fa-solid fa-plus me-1"></i> เพิ่มวันหยุด
+                            </button>
+                        </div>
+                    </div>
+                    <div id="month-holidays-list" class="d-flex flex-wrap gap-2"></div>
+                </div>
+            </div>
+
+            <!-- TAB 4: MEMBER MANAGEMENT -->
+            <div id="tab-members" class="tab-content d-none">
+                <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+                    <div>
+                        <h3 class="fw-bold mb-1"><i class="fa-solid fa-users text-primary me-2"></i>จัดการรายชื่อเจ้าหน้าที่อยู่เวร</h3>
+                        <p class="text-muted small mb-0">แยกชุดปฏิบัติงานระหว่าง <b>เวรกลางวัน (วันหยุดราชการ)</b> และ <b>เวรกลางคืน (ทุกวัน)</b></p>
+                    </div>
+                    <button class="btn btn-primary" onclick="openMemberModal()">
+                        <i class="fa-solid fa-user-plus me-1"></i> เพิ่มรายชื่อเจ้าหน้าที่
+                    </button>
+                </div>
+
+                <div class="row g-4">
+                    <!-- Day Shift Members -->
+                    <div class="col-lg-6">
+                        <div class="card p-3 border-top border-4 border-warning">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-sun text-warning me-2"></i>ชุดเวรกลางวัน (08.30 - 16.30 น.)</h5>
+                                <span class="badge bg-warning text-dark" id="badge-day-count">8 คน</span>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th style="width: 50px;">ที่</th>
+                                            <th>ชื่อ-นามสกุล</th>
+                                            <th>เบอร์โทรศัพท์</th>
+                                            <th class="text-center">จัดการ</th>
+                                        </tr>
+                                    </thead>
+                    <!-- Day Shift Section -->
+                <div id="modal-day-shift-box" class="p-3 rounded-3 mb-3 border border-warning" style="background-color: #fffbeb;">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="fw-bold text-warning-emphasis"><i class="fa-solid fa-sun text-warning me-1"></i> เวรกลางวัน (08.30 - 16.30 น.)</span>
+                        <span class="badge bg-warning text-dark" id="modal-holiday-badge">วันหยุดราชการ</span>
+                    </div>
+                    <select id="modal-day-select" class="form-select form-select-sm mb-2"></select>
+                    <div class="d-flex justify-content-between align-items-center small text-muted">
+                        <span id="modal-day-phone"><i class="fa-solid fa-phone me-1"></i> เบอร์โทร: -</span>
+                        <a id="modal-day-call" href="#" class="btn btn-outline-warning btn-sm py-0 px-2 text-dark d-none"><i class="fa-solid fa-phone-volume me-1"></i>โทรออก</a>
+                    </div>
+                </div>
+
+                <div id="modal-workday-notice" class="alert alert-secondary py-2 px-3 small mb-3 d-none">
+                    <i class="fa-solid fa-building me-1"></i> <b>วันทำการปกติ:</b> ไม่มีเวรกลางวัน (เปิดสวิตช์ "วันหยุดราชการ" ด้านบนหากเป็นวันหยุดนักขัตฤกษ์)
+                </div>
+
+                <!-- Night Shift Section -->
+                <div class="p-3 rounded-3 border border-primary" style="background-color: #eef2ff;">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="fw-bold text-primary-emphasis"><i class="fa-solid fa-moon text-primary me-1"></i> เวรกลางคืน (16.30 - 08.30 น.)</span>
+                        <span class="badge bg-primary">ทุกวัน</span>
+                    </div>
+                    <select id="modal-night-select" class="form-select form-select-sm mb-2"></select>
+                    <div class="d-flex justify-content-between align-items-center small text-muted">
+                        <span id="modal-night-phone"><i class="fa-solid fa-phone me-1"></i> เบอร์โทร: -</span>
+                        <a id="modal-night-call" href="#" class="btn btn-outline-primary btn-sm py-0 px-2 d-none"><i class="fa-solid fa-phone-volume me-1"></i>โทรออก</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 5: SETTINGS & LINE / GOOGLE APPS SCRIPT -->
             <div id="tab-settings" class="tab-content d-none">
-                <h2 class="fw-bold mb-4"><i class="fa-solid fa-gear text-primary me-2"></i>ตั้งค่าระบบ & LINE Messaging API / GAS</h2>
+                <h3 class="fw-bold mb-4"><i class="fa-solid fa-sliders text-primary me-2"></i>ตั้งค่าระบบ LINE Messaging API & Google Sheets</h3>
                 
-                <div class="row">
-                    <!-- Shift Cycle Settings -->
-                    <div class="col-lg-6 mb-4">
+                <div class="row g-4">
+                    <!-- Order Reference & Auto Rules -->
+                    <div class="col-lg-6">
                         <div class="card p-4 h-100">
-                            <h5 class="card-title fw-bold border-bottom pb-2 mb-3"><i class="fa-solid fa-sliders text-primary me-2"></i>กำหนดวันเริ่มรอบเวร</h5>
-                            <form id="settings-form" onsubmit="saveSettings(event)">
-                                <div class="mb-3">
-                                    <label for="start-date" class="form-label fw-bold">วันที่เริ่มรอบเวร (Anchor Date)</label>
-                                    <input type="date" class="form-control" id="start-date" required>
-                                    <div class="form-text">ระบบใช้วันนี้เป็นวันเริ่มต้นรอบจัดเวรหมุนเวียนสัปดาห์</div>
-                                </div>
-                                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk me-1"></i> บันทึกการตั้งค่า</button>
-                            </form>
+                            <h5 class="fw-bold border-bottom pb-2 mb-3"><i class="fa-solid fa-file-signature text-primary me-2"></i>ข้อมูลหัวคำสั่งราชการ</h5>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">เลขที่คำสั่ง / ลงวันที่</label>
+                                <input type="text" id="setting-order-text" class="form-control" value="คำสั่งศูนย์ป่าไม้ขอนแก่น ที่ ๑๐ /๒๕๖๙ ลงวันที่ ๓๐ ตุลาคม พ.ศ. ๒๕๖๙">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">วันเริ่มรอบเวรกลางคืน (Anchor Date)</label>
+                                <input type="date" id="setting-anchor-date" class="form-control" value="2026-11-01">
+                                <div class="form-text">ระบบจะจัดเวรกลางคืน 7 คนหมุนเวียนไม่ซ้ำวันในสัปดาห์เดียวกัน (อาทิตย์-เสาร์)</div>
+                            </div>
+                            <button class="btn btn-primary" onclick="saveGeneralSettings()">
+                                <i class="fa-solid fa-floppy-disk me-1"></i> บันทึกข้อมูลคำสั่ง
+                            </button>
                         </div>
                     </div>
 
-                    <!-- LINE Messaging API Configuration -->
-                    <div class="col-lg-6 mb-4">
+                    <!-- LINE Messaging API -->
+                    <div class="col-lg-6">
                         <div class="card p-4 h-100 border-start border-4 border-success">
-                            <h5 class="card-title fw-bold border-bottom pb-2 mb-3 text-success"><i class="fa-brands fa-line me-2"></i>ตั้งค่า LINE Messaging API</h5>
-                            <form onsubmit="saveLineSettings(event)">
-                                <div class="mb-3">
-                                    <label for="line-token" class="form-label fw-bold">Channel Access Token</label>
-                                    <input type="password" class="form-control" id="line-token" placeholder="วาง Long-lived Channel Access Token ที่นี่">
-                                </div>
-                                <div class="mb-3">
-                                    <label for="line-target-id" class="form-label fw-bold">Target User ID / Group ID</label>
-                                    <input type="text" class="form-control" id="line-target-id" placeholder="เช่น U123456789... หรือ C123456789...">
-                                </div>
-                                <div class="d-flex gap-2">
-                                    <button type="button" class="btn btn-outline-success" onclick="testLineMessage()"><i class="fa-solid fa-paper-plane me-1"></i> ทดสอบส่ง LINE</button>
-                                    <button type="submit" class="btn line-green-btn"><i class="fa-solid fa-save me-1"></i> บันทึกการตั้งค่า LINE</button>
-                                </div>
-                            </form>
+                            <h5 class="fw-bold border-bottom pb-2 mb-3 text-success"><i class="fa-brands fa-line me-2"></i>ตั้งค่า LINE Messaging API</h5>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Channel Access Token (Long-lived)</label>
+                                <input type="password" id="line-token" class="form-control" placeholder="วาง Channel Access Token ที่นี่">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Target User ID / Group ID</label>
+                                <input type="text" id="line-target-id" class="form-control" placeholder="เช่น C1234567890abcdef... หรือ U1234...">
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-outline-success" onclick="testLineConnection()">
+                                    <i class="fa-solid fa-paper-plane me-1"></i> ทดสอบส่งข้อความ
+                                </button>
+                                <button class="btn line-green-btn" onclick="saveLineConfig()">
+                                    <i class="fa-solid fa-save me-1"></i> บันทึกการตั้งค่า LINE
+                                </button>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Google Sheets Database Integration -->
-                    <div class="col-lg-12 mb-4">
+                    <!-- Google Sheets Database -->
+                    <div class="col-12">
                         <div class="card p-4">
-                            <h5 class="card-title fw-bold border-bottom pb-2 mb-3"><i class="fa-solid fa-cloud text-info me-2"></i>เชื่อมต่อ Google Sheets Database & Apps Script</h5>
-                            <div class="row align-items-center">
-                                <div class="col-md-8 mb-3 mb-md-0">
-                                    <label for="api-url" class="form-label fw-bold">Google Apps Script Web App URL</label>
-                                    <input type="url" class="form-control" id="api-url" placeholder="https://script.google.com/macros/s/.../exec">
-                                    <div class="form-text">ใส่ Web App URL ที่ได้จากการ Deploy ใน Apps Script เพื่อซิงค์ข้อมูล และตั้งเตือนอัตโนมัติ 06:00 น.</div>
+                            <h5 class="fw-bold border-bottom pb-2 mb-3"><i class="fa-solid fa-cloud text-info me-2"></i>เชื่อมต่อ Google Sheets Database & Apps Script</h5>
+                            <div class="row align-items-center g-3">
+                                <div class="col-md-8">
+                                    <label class="form-label fw-bold">Google Apps Script Web App URL</label>
+                                    <input type="url" id="gas-api-url" class="form-control" placeholder="https://script.google.com/macros/s/.../exec">
+                                    <div class="form-text">วาง URL จากการ Deploy Web App เพื่อซิงค์ตารางเวรและตั้งแจ้งเตือนอัตโนมัติทุกเช้า/เย็น</div>
                                 </div>
                                 <div class="col-md-4 d-flex flex-column gap-2">
-                                    <button class="btn btn-success" onclick="saveApiUrl()"><i class="fa-solid fa-save me-1"></i> บันทึก Web App URL</button>
-                                    <button class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#gasCodeModal">
-                                        <i class="fa-solid fa-code me-1"></i> คัดลอกโค้ด Google Apps Script (GAS)
+                                    <button class="btn btn-success" onclick="saveGasUrl()">
+                                        <i class="fa-solid fa-save me-1"></i> บันทึก Web App URL
+                                    </button>
+                                    <button class="btn btn-outline-dark" data-bs-toggle="modal" data-bs-target="#gasCodeModal">
+                                        <i class="fa-solid fa-code me-1"></i> ดู/คัดลอกโค้ด Google Apps Script
                                     </button>
                                 </div>
                             </div>
@@ -401,874 +637,1166 @@
     </div>
 </div>
 
-<!-- 1. MODAL: POP-UP รายละเอียดเวรรายวัน & ปุ่มส่ง LINE -->
+<!-- MODAL 1: INTERACTIVE DAY POP-UP (กลางวัน + กลางคืน) -->
 <div class="modal fade" id="dayDetailModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title fw-bold" id="dayModalDateTitle">
-                    <i class="fa-solid fa-calendar-day me-2"></i>รายละเอียดเวรประจำวัน
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <input type="hidden" id="modal-selected-date">
-                
-                <div class="p-3 bg-light rounded-3 mb-3 text-center border">
-                    <span class="text-muted small d-block">วันที่เลือก</span>
-                    <h4 class="fw-bold text-primary mb-0" id="modal-full-date-display">-</h4>
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label fw-bold"><i class="fa-solid fa-user-shield me-1"></i> ผู้เข้าเวรประจำวัน</label>
-                    <div id="modal-current-shift-card" class="p-3 rounded-3 border d-flex align-items-center justify-content-between mb-2" style="background-color: #f8fafc;">
-                        <!-- Dynamic Duty Person Card -->
-                    </div>
-                </div>
-
-                <div class="mb-3">
-                    <label for="modal-member-select" class="form-label fw-bold"><i class="fa-solid fa-right-left me-1"></i> สลับ/เปลี่ยนผู้เข้าเวรเฉพาะวันนี้</label>
-                    <select id="modal-member-select" class="form-select">
-                        <!-- Dynamic Member Options -->
-                    </select>
-                    <div class="form-text">การเปลี่ยนตัวในหน้านี้จะถือเป็นการ Manual Override เฉพาะวันที่เลือก</div>
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label fw-bold"><i class="fa-solid fa-clock me-1"></i> ช่วงเวลาปฏิบัติงาน</label>
-                    <input type="text" class="form-control" value="เวรปฏิบัติงานประจำวัน (08:30 - 16:30 น.)" readonly>
-                </div>
-            </div>
-            <div class="modal-footer d-flex justify-content-between">
-                <button type="button" class="btn line-green-btn btn-sm" onclick="sendSingleDayToLine()">
-                    <i class="fa-brands fa-line me-1"></i> ส่งเตือนวันเข้าเวรนี้เข้า LINE
-                </button>
-                <div class="d-flex gap-2">
-                    <button type="button" class="btn btn-outline-danger btn-sm d-none" id="btn-reset-override" onclick="resetDayOverride()">
-                        <i class="fa-solid fa-rotate-left me-1"></i> คืนค่าอัตโนมัติ
-                    </button>
-                    <button type="button" class="btn btn-primary btn-sm" onclick="saveDayOverride()">
-                        <i class="fa-solid fa-floppy-disk me-1"></i> บันทึกการเปลี่ยนแปลง
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- 2. MODAL: เพิ่ม/แก้ไขสมาชิก -->
-<div class="modal fade" id="memberModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content border-0 shadow">
-            <div class="modal-header">
-                <h5 class="modal-title fw-bold" id="memberModalTitle"><i class="fa-solid fa-user-plus me-1"></i> เพิ่มสมาชิกใหม่</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <form onsubmit="handleSaveMember(event)">
-                <input type="hidden" id="member-id">
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="member-name" class="form-label fw-bold">ชื่อ-นามสกุล</label>
-                        <input type="text" class="form-control" id="member-name" required placeholder="เช่น สมชาย ใจดี">
-                    </div>
-                    <div class="mb-3">
-                        <label for="member-role" class="form-label fw-bold">ตำแหน่ง / แผนก</label>
-                        <input type="text" class="form-control" id="member-role" placeholder="เช่น เจ้าหน้าที่ไอที">
-                    </div>
-                    <div class="mb-3">
-                        <label for="member-color" class="form-label fw-bold">เลือกสีประจำตัว</label>
-                        <input type="color" class="form-control form-control-color w-100" id="member-color" value="#2563eb">
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
-                    <button type="submit" class="btn btn-primary">บันทึกข้อมูล</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- 3. MODAL: Google Apps Script Code Script Generator -->
-<div class="modal fade" id="gasCodeModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content border-0 shadow">
+        <div class="modal-content border-0 shadow-lg">
             <div class="modal-header bg-dark text-white">
-                <h5 class="modal-title fw-bold"><i class="fa-solid fa-code me-2"></i>Google Apps Script (GAS) Code</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <p class="text-muted mb-2">คัดลอกโค้ดด้านล่างนี้ นำไปวางใน <b>ส่วนขยาย ➔ Apps Script</b> บน Google Sheets ของคุณ เพื่อใช้บันทึกตารางเวร และส่งแจ้งเตือน LINE อัตโนมัติทุกเช้า 06:00 น.</p>
-                <textarea id="gasCodeTextArea" class="form-control font-monospace bg-light" rows="14" readonly>
-// ==========================================
-// GOOGLE APPS SCRIPT FOR FAIR DUTY ROTA & LINE NOTIFY
-// ==========================================
-
-const LINE_TOKEN = "ใส่_CHANNEL_ACCESS_TOKEN_ที่นี่";
-const TARGET_ID = "ใส่_USER_ID_หรือ_GROUP_ID_ที่นี่";
-
-function doGet(e) {
-  return ContentService.createTextOutput(JSON.stringify({ status: 'ok', message: 'Duty Rota API Active' }))
-    .setMimeType(ContentService.MimeType.JSON);
-}
-
-function doPost(e) {
-  try {
-    var data = JSON.parse(e.postData.contents);
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    
-    if (data.action === 'syncData') {
-      var sheet = ss.getActiveSheet();
-      sheet.clear();
-      sheet.appendRow(["=== รายชื่อสมาชิก ==="]);
-      sheet.appendRow(["ID", "ชื่อ-นามสกุล", "ตำแหน่ง", "สีประจำตัว"]);
-      data.members.forEach(function(m) {
-        sheet.appendRow([m.id, m.name, m.role, m.color]);
-      });
-      
-      sheet.appendRow([]);
-      sheet.appendRow(["=== การตั้งค่าระบบ ==="]);
-      sheet.appendRow(["Anchor Date", data.settings.anchorDate]);
-      
-      return ContentService.createTextOutput(JSON.stringify({ status: 'success' }))
-        .setMimeType(ContentService.MimeType.JSON);
-    }
-  } catch (error) {
-    return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: error.toString() }))
-      .setMimeType(ContentService.MimeType.JSON);
-  }
-}
-
-// ฟังก์ชั่นตั้งเวลาส่งแจ้งเตือนรายวันอัตโนมัติ (Time-driven Trigger 06:00 น.)
-function sendDailyLineNotification() {
-  var today = Utilities.formatDate(new Date(), "Asia/Bangkok", "yyyy-MM-dd");
-  var thaiDate = Utilities.formatDate(new Date(), "Asia/Bangkok", "d MMMM yyyy");
-  
-  var payload = {
-    "to": TARGET_ID,
-    "messages": [
-      {
-        "type": "flex",
-        "altText": "แจ้งเตือนเวรประจำวัน " + thaiDate,
-        "contents": {
-          "type": "bubble",
-          "header": {
-            "type": "box",
-            "layout": "vertical",
-            "backgroundColor": "#2563eb",
-            "contents": [
-              { "type": "text", "text": "📢 แจ้งเตือนเวรประจำวัน", "color": "#ffffff", "weight": "bold", "size": "md" },
-              { "type": "text", "text": thaiDate, "color": "#ffffff", "size": "xs", "margin": "xs" }
-            ]
-          },
-          "body": {
-            "type": "box",
-            "layout": "vertical",
-            "contents": [
-              { "type": "text", "text": "ขอเชิญผู้ปฏิบัติหน้าที่เข้ารายงานตัว:", "size": "sm", "color": "#666666" },
-              { "type": "text", "text": "🔔 ปฏิบัติหน้าที่เวรประจำวัน", "weight": "bold", "size": "lg", "margin": "md", "color": "#1e293b" }
-            ]
-          }
+                <h5 class="modal-title fw-bold"><i class="fa-solid fa-calendar-day text-warning me-2"></i>รายละเอียดเวรประจำวัน</h5>
+    // Exact mapping for Nov 2026 from Order 10/2569 (100% Match)
+    const ORDER_10_NOV_2026 = {
+        // Day Shifts (Weekends in Nov 2026: 1, 7, 8, 14, 15, 21, 22, 28, 29)
+        day: {
+            '2026-11-01': 'd1',
+            '2026-11-07': 'd2',
+            '2026-11-08': 'd3',
+            '2026-11-14': 'd4',
+            '2026-11-15': 'd5',
+            '2026-11-21': 'd6',
+            '2026-11-22': 'd7',
+            '2026-11-28': 'd8',
+            '2026-11-29': 'd1'
+        },
+        // Night Shifts (All 30 days in Nov 2026 - Exact dates from Order 10/2569)
+        night: {
+            '2026-11-01': 'n1', '2026-11-14': 'n1', '2026-11-20': 'n1', '2026-11-26': 'n1',
+            '2026-11-02': 'n2', '2026-11-08': 'n2', '2026-11-21': 'n2', '2026-11-27': 'n2',
+            '2026-11-03': 'n3', '2026-11-09': 'n3', '2026-11-15': 'n3', '2026-11-28': 'n3',
+            '2026-11-04': 'n4', '2026-11-10': 'n4', '2026-11-16': 'n4', '2026-11-22': 'n4',
+            '2026-11-05': 'n5', '2026-11-11': 'n5', '2026-11-17': 'n5', '2026-11-23': 'n5', '2026-11-29': 'n5',
+            '2026-11-06': 'n6', '2026-11-12': 'n6', '2026-11-18': 'n6', '2026-11-24': 'n6', '2026-11-30': 'n6',
+            '2026-11-07': 'n7', '2026-11-13': 'n7', '2026-11-19': 'n7', '2026-11-25': 'n7'
         }
-      }
-    ]
-  };
-
-  UrlFetchApp.fetch("https://api.line.me/v2/bot/message/push", {
-    "method": "post",
-    "headers": {
-      "Content-Type": "application/json",
-      "Authorization": "Bearer " + LINE_TOKEN
-    },
-    "payload": JSON.stringify(payload)
-  });
-}
-</textarea>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-outline-primary" onclick="copyGasCode()"><i class="fa-solid fa-copy me-1"></i> คัดลอกโค้ด</button>
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ปิด</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Toast Notifications -->
-<div class="toast-container">
-    <div id="liveToast" class="toast align-items-center text-white bg-dark border-0 rounded-3 shadow" role="alert">
-        <div class="d-flex">
-            <div class="toast-body" id="toast-message">บันทึกเรียบร้อย</div>
-            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-        </div>
-    </div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-
-<script>
-    // --- Initial State Management ---
-    let members = JSON.parse(localStorage.getItem('fair_weekly_members')) || [
-        { id: 1, name: 'สมชาย ใจดี', role: 'สมาชิก 1', color: '#2563eb' },
-        { id: 2, name: 'วิภาดา รักเรียน', role: 'สมาชิก 2', color: '#10b981' },
-        { id: 3, name: 'กิตติศักดิ์ มั่นคง', role: 'สมาชิก 3', color: '#f59e0b' },
-        { id: 4, name: 'นภาพร สดใส', role: 'สมาชิก 4', color: '#ec4899' },
-        { id: 5, name: 'อนันต์ สายลุย', role: 'สมาชิก 5', color: '#8b5cf6' },
-        { id: 6, name: 'ชลธิชา มีสุข', role: 'สมาชิก 6', color: '#06b6d4' },
-        { id: 7, name: 'ธนากร พร้อมพรั่ง', role: 'สมาชิก 7', color: '#64748b' }
-    ];
-
-    let settings = JSON.parse(localStorage.getItem('fair_weekly_settings')) || {
-        anchorDate: '2026-01-04', // Default Sunday
-        apiUrl: ''
     };
 
-    let lineSettings = JSON.parse(localStorage.getItem('fair_line_settings')) || {
-        token: '',
-        targetId: ''
+    // Built-in Thai Public Holidays (2569 - 2570 / 2026 - 2027)
+    const THAI_PUBLIC_HOLIDAYS = {
+        '2026-12-05': 'วันคล้ายวันพระบรมราชสมภพ ร.9 / วันพ่อแห่งชาติ',
+        '2026-12-07': 'วันหยุดชดเชยวันพ่อแห่งชาติ',
+        '2026-12-10': 'วันรัฐธรรมนูญ',
+        '2026-12-31': 'วันสิ้นปี',
+        '2027-01-01': 'วันขึ้นปีใหม่',
+        '2027-02-22': 'วันมาฆบูชา',
+        '2027-04-06': 'วันจักรี',
+        '2027-04-13': 'วันสงกรานต์',
+        '2027-04-14': 'วันสงกรานต์',
+        '2027-04-15': 'วันสงกรานต์',
+        '2027-05-04': 'วันฉัตรมงคล',
+        '2027-05-20': 'วันวิสาขบูชา',
+        '2027-06-03': 'วันเฉลิมพระชนมพรรษาพระราชินี',
+        '2027-07-19': 'วันอาสาฬหบูชา',
+        '2027-07-20': 'วันเข้าพรรษา',
+        '2027-07-28': 'วันเฉลิมพระชนมพรรษา ร.10',
+        '2027-08-12': 'วันแม่แห่งชาติ',
+        '2027-10-13': 'วันนวมินทรมหาราช',
+        '2027-10-23': 'วันปิยมหาราช',
+        '2027-12-05': 'วันพ่อแห่งชาติ',
+        '2027-12-06': 'วันหยุดชดเชยวันพ่อแห่งชาติ',
+        '2027-12-10': 'วันรัฐธรรมนูญ',
+        '2027-12-31': 'วันสิ้นปี'
     };
 
-    let dayOverrides = JSON.parse(localStorage.getItem('fair_weekly_overrides')) || {};
+    // Application State
+    let dayMembers = JSON.parse(localStorage.getItem('kkf_day_members')) || JSON.parse(JSON.stringify(DEFAULT_DAY_MEMBERS));
+    let nightMembers = JSON.parse(localStorage.getItem('kkf_night_members')) || JSON.parse(JSON.stringify(DEFAULT_NIGHT_MEMBERS));
+    let scheduleStore = JSON.parse(localStorage.getItem('kkf_schedule_store')) || {};
+    let customHolidays = JSON.parse(localStorage.getItem('kkf_custom_holidays')) || {}; // { 'YYYY-MM-DD': 'ชื่อวันหยุด' | false }
+    let appSettings = JSON.parse(localStorage.getItem('kkf_settings')) || {
+        orderText: 'คำสั่งศูนย์ป่าไม้ขอนแก่น ที่ ๑๐ /๒๕๖๙ ลงวันที่ ๓๐ ตุลาคม พ.ศ. ๒๕๖๙',
+        anchorDate: '2026-11-01',
+        gasUrl: '',
+        lineToken: '',
+        lineTargetId: ''
+    };
 
-    let chartInstance = null;
-    let shiftCache = {}; 
+    let dayChartObj = null;
+    let nightChartObj = null;
 
+    // Initialize App
     document.addEventListener('DOMContentLoaded', () => {
-        const today = new Date();
-        const yearMonth = today.toISOString().slice(0, 7);
-        document.getElementById('month-picker').value = yearMonth;
-        document.getElementById('start-date').value = settings.anchorDate;
-        document.getElementById('api-url').value = settings.apiUrl || '';
-        document.getElementById('line-token').value = lineSettings.token || '';
-        document.getElementById('line-target-id').value = lineSettings.targetId || '';
+        // Load Order 10/2569 into Nov 2026 if empty
+        if (Object.keys(scheduleStore).length === 0) {
+            seedOrder10Data();
+        }
+        
+        document.getElementById('setting-order-text').value = appSettings.orderText;
+        document.getElementById('quick-order-input').value = appSettings.orderText;
+        document.getElementById('setting-anchor-date').value = appSettings.anchorDate;
+        document.getElementById('gas-api-url').value = appSettings.gasUrl || '';
+        document.getElementById('line-token').value = appSettings.lineToken || '';
+        document.getElementById('line-target-id').value = appSettings.lineTargetId || '';
+        updateSyncStatusUI();
 
-        updateSyncIndicator();
-        calculateAllShifts();
-        renderDashboard();
-        renderCalendar();
-        renderMembers();
+        ensureMonthPopulated('2026-11');
+        renderAllViews();
     });
 
-    function switchTab(tabName, event) {
-        if (event) event.preventDefault();
-        document.querySelectorAll('.tab-content').forEach(el => el.classList.add('d-none'));
-        document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
-        
-        document.getElementById(`tab-${tabName}`).classList.remove('d-none');
-        if (event && event.currentTarget) event.currentTarget.classList.add('active');
+    function seedOrder10Data() {
+        for (let d = 1; d <= 30; d++) {
+            const dateStr = `2026-11-${String(d).padStart(2, '0')}`;
+            scheduleStore[dateStr] = {
+                dayId: ORDER_10_NOV_2026.day[dateStr] || null,
+                nightId: ORDER_10_NOV_2026.night[dateStr] || null
+            };
+        }
+        saveScheduleStore();
+    }
 
-        if (tabName === 'dashboard') renderDashboard();
-        if (tabName === 'schedule') renderCalendar();
+    function saveScheduleStore() {
+        localStorage.setItem('kkf_schedule_store', JSON.stringify(scheduleStore));
+        localStorage.setItem('kkf_custom_holidays', JSON.stringify(customHolidays));
+    }
+
+    function getHolidayInfo(dateStr) {
+        if (customHolidays.hasOwnProperty(dateStr)) {
+            if (customHolidays[dateStr] === false) return { isHoliday: false, label: '' };
+            return { isHoliday: true, label: typeof customHolidays[dateStr] === 'string' ? customHolidays[dateStr] : 'วันหยุดราชการ' };
+        }
+        if (THAI_PUBLIC_HOLIDAYS[dateStr]) {
+            return { isHoliday: true, label: THAI_PUBLIC_HOLIDAYS[dateStr] };
+        }
+        const dt = new Date(dateStr + 'T00:00:00');
+        const dow = dt.getDay();
+        if (dow === 0) return { isHoliday: true, label: 'วันอาทิตย์' };
+        if (dow === 6) return { isHoliday: true, label: 'วันเสาร์' };
+        return { isHoliday: false, label: '' };
+    }
+
+    function isHoliday(dateStr) {
+        return getHolidayInfo(dateStr).isHoliday;
     }
 
     /**
-     * STRICT FAIR SHIFT ALLOCATION ALGORITHM
-     * Rule 1: Exactly 1 shift per day for 1 member
-     * Rule 2: Each member gets <= 1 shift per week (Sunday-Saturday)
-     * Rule 3: Prevents consecutive days across weeks/months
+     * SMART CONTINUOUS ROTATION (คำนวณต่อเนื่องข้ามเดือนอย่างแม่นยำ)
+     * 1. กะกลางคืน (7 คน):
+     *    - คำนวณต่อเนื่องจากวันสุดท้ายของเดือนก่อนหน้า (เช่น 30 พ.ย. จบที่คนที่ 6 -> 1 ธ.ค. เริ่มที่คนที่ 7)
+     *    - บังคับเงื่อนไข: ไม่ให้เข้าเวรซ้ำคนในสัปดาห์เดียวกัน (อาทิตย์ - เสาร์)
+     *    - เลือกผู้ที่มีจำนวนเวรสะสมในเดือนน้อยที่สุดก่อน เพื่อความเท่าเทียมกันทั้ง 7 คน
+     * 2. กะกลางวัน (8 คน):
+     *    - จัดลงเฉพาะวันหยุดราชการ (เสาร์-อาทิตย์ และวันหยุดนักขัตฤกษ์)
+     *    - เรียงคิวต่อเนื่องจากคนสุดท้ายของเดือนก่อนหน้า (เช่น 29 พ.ย. จบที่คนที่ 1 -> วันหยุดแรกของ ธ.ค. เริ่มที่คนที่ 2)
      */
-    function calculateAllShifts() {
-        shiftCache = {};
-        if (members.length === 0) return;
-
-        const anchor = new Date(settings.anchorDate);
-        anchor.setHours(0, 0, 0, 0);
-
-        const anchorDay = anchor.getDay();
-        const baseSunday = new Date(anchor);
-        baseSunday.setDate(baseSunday.getDate() - anchorDay);
-
-        const startSunday = new Date(baseSunday);
-        startSunday.setDate(startSunday.getDate() - (52 * 7));
-
-        const totalWeeks = 156;
-
-        for (let week = 0; week < totalWeeks; week++) {
-            const currentWeekSunday = new Date(startSunday);
-            currentWeekSunday.setDate(currentWeekSunday.getDate() + (week * 7));
-
-            const weekOffset = week % members.length;
-            const rotatedMembers = [
-                ...members.slice(weekOffset),
-                ...members.slice(0, weekOffset)
-            ];
-
-            for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
-                const dutyDate = new Date(currentWeekSunday);
-                dutyDate.setDate(dutyDate.getDate() + dayIndex);
-                const dateKey = dutyDate.toISOString().slice(0, 10);
-
-                if (dayOverrides[dateKey]) {
-                    const overrideMember = members.find(m => m.id === dayOverrides[dateKey]);
-                    if (overrideMember) {
-                        shiftCache[dateKey] = [{ ...overrideMember, isOverride: true }];
-                        continue;
-                    }
-                }
-
-                const assignedMember = rotatedMembers[dayIndex % rotatedMembers.length];
-                shiftCache[dateKey] = [assignedMember];
-            }
-        }
-    }
-
-    function getShiftsForDate(dateStr) {
-        if (!shiftCache[dateStr]) {
-            calculateAllShifts();
-        }
-        return shiftCache[dateStr] || [];
-    }
-
-    function recalculateShifts() {
-        calculateAllShifts();
-        renderDashboard();
-        renderCalendar();
-        showToast('คำนวณและกระจายรอบสลับเวรใหม่เรียบร้อย!');
-    }
-
-    function openDayDetailModal(dateStr) {
-        document.getElementById('modal-selected-date').value = dateStr;
-
-        const dateObj = new Date(dateStr + 'T00:00:00');
-        const thaiDateString = dateObj.toLocaleDateString('th-TH', {
-            weekday: 'long',
-            day: 'numeric',
-            month: 'long',
-            year: 'numeric'
-        });
-
-        document.getElementById('modal-full-date-display').innerText = thaiDateString;
-
-        const shifts = getShiftsForDate(dateStr);
-        const currentPerson = shifts[0] || null;
-
-        const currentShiftCard = document.getElementById('modal-current-shift-card');
-        if (currentPerson) {
-            currentShiftCard.style.borderLeft = `6px solid ${currentPerson.color}`;
-            currentShiftCard.innerHTML = `
-                <div class="d-flex align-items-center">
-                    <div class="avatar-circle me-3" style="background-color: ${currentPerson.color};">
-                        ${currentPerson.name.charAt(0)}
-                    </div>
-                    <div>
-                        <h6 class="mb-0 fw-bold">${currentPerson.name} ${currentPerson.isOverride ? '<span class="override-tag"><i class="fa-solid fa-pen"></i> แก้ไขแล้ว</span>' : ''}</h6>
-                        <small class="text-muted">${currentPerson.role || 'สมาชิกประจำ'}</small>
-                    </div>
-                </div>
-                <span class="badge" style="background-color: ${currentPerson.color};">ผู้เข้าเวร</span>
-            `;
-        } else {
-            currentShiftCard.innerHTML = `<span class="text-muted">ไม่มีผู้เข้าเวร</span>`;
-        }
-
-        const memberSelect = document.getElementById('modal-member-select');
-        memberSelect.innerHTML = '';
-        members.forEach(m => {
-            const opt = document.createElement('option');
-            opt.value = m.id;
-            opt.innerText = `${m.name} (${m.role || 'สมาชิก'})`;
-            if (currentPerson && m.id === currentPerson.id) {
-                opt.selected = true;
-            }
-            memberSelect.appendChild(opt);
-        });
-
-        const btnReset = document.getElementById('btn-reset-override');
-        if (dayOverrides[dateStr]) {
-            btnReset.classList.remove('d-none');
-        } else {
-            btnReset.classList.add('d-none');
-        }
-
-        const modal = new bootstrap.Modal(document.getElementById('dayDetailModal'));
-        modal.show();
-    }
-
-    function saveDayOverride() {
-        const dateStr = document.getElementById('modal-selected-date').value;
-        const selectedMemberId = Number(document.getElementById('modal-member-select').value);
-
-        if (!dateStr || !selectedMemberId) return;
-
-        dayOverrides[dateStr] = selectedMemberId;
-        localStorage.setItem('fair_weekly_overrides', JSON.stringify(dayOverrides));
-
-        calculateAllShifts();
-        renderDashboard();
-        renderCalendar();
-
-        const modal = bootstrap.Modal.getInstance(document.getElementById('dayDetailModal'));
-        if (modal) modal.hide();
-
-        showToast('สลับเปลี่ยนตัวผู้เข้าเวรเฉพาะวันเรียบร้อย!');
-    }
-
-    function resetDayOverride() {
-        const dateStr = document.getElementById('modal-selected-date').value;
-        if (!dateStr) return;
-
-        delete dayOverrides[dateStr];
-        localStorage.setItem('fair_weekly_overrides', JSON.stringify(dayOverrides));
-
-        calculateAllShifts();
-        renderDashboard();
-        renderCalendar();
-
-        const modal = bootstrap.Modal.getInstance(document.getElementById('dayDetailModal'));
-        if (modal) modal.hide();
-
-        showToast('คืนค่าผู้เข้าเวรอัตโนมัติเรียบร้อยแล้ว');
-    }
-
-    function renderDashboard() {
-        const todayStr = new Date().toISOString().slice(0, 10);
-        const todayShifts = getShiftsForDate(todayStr);
-        
-        document.getElementById('dash-members-count').innerText = `${members.length} คน`;
-        document.getElementById('dash-today-duty').innerText = todayShifts.length > 0 ? todayShifts.map(m => m.name).join(', ') : 'ไม่มีเวร';
-
-        const upcomingList = document.getElementById('upcoming-duty-list');
-        upcomingList.innerHTML = '';
-        const now = new Date();
-        
-        for (let i = 0; i < 7; i++) {
-            const date = new Date();
-            date.setDate(now.getDate() + i);
-            const dateStr = date.toISOString().slice(0, 10);
-            const shifts = getShiftsForDate(dateStr);
-            
-            const formattedDate = date.toLocaleDateString('th-TH', { weekday: 'short', day: 'numeric', month: 'short' });
-            const li = document.createElement('li');
-            li.className = 'list-group-item d-flex justify-content-between align-items-center py-2 px-1 calendar-day-item';
-            li.style.cursor = 'pointer';
-            li.onclick = () => openDayDetailModal(dateStr);
-            
-            const badgesHtml = shifts.map(s => 
-                `<span class="badge" style="background-color: ${s.color}; font-size: 0.85rem;">${s.name} ${s.isOverride ? '✏️' : ''}</span>`
-            ).join('');
-
-            li.innerHTML = `
-                <span class="small">${i === 0 ? '<strong class="text-primary">วันนี้</strong>' : formattedDate}</span>
-                <div>${badgesHtml || '-'}</div>
-            `;
-            upcomingList.appendChild(li);
-        }
-
-        updateChart();
-    }
-
-    function updateChart() {
-        const yearMonth = document.getElementById('month-picker').value || new Date().toISOString().slice(0, 7);
+    function generateMonthSchedule(yearMonth, forceOverwrite = false) {
         const [year, month] = yearMonth.split('-').map(Number);
         const daysInMonth = new Date(year, month, 0).getDate();
 
-        const monthName = new Date(year, month - 1, 1).toLocaleDateString('th-TH', { month: 'long', year: 'numeric' });
-        document.getElementById('chart-month-label').innerText = monthName;
-
-        const dutyCounts = {};
-        members.forEach(m => dutyCounts[m.id] = { name: m.name, color: m.color, count: 0 });
-
-        for (let day = 1; day <= daysInMonth; day++) {
-            const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-            const shifts = getShiftsForDate(dateStr);
-            shifts.forEach(person => {
-                if (dutyCounts[person.id]) {
-                    dutyCounts[person.id].count++;
+        // Ensure previous months from baseline 2026-11 up to target month exist for seamless continuation
+        if (yearMonth > '2026-11') {
+            let [py, pm] = [2026, 11];
+            while (`${py}-${String(pm).padStart(2, '0')}` < yearMonth) {
+                const prevYm = `${py}-${String(pm).padStart(2, '0')}`;
+                const prevDays = new Date(py, pm, 0).getDate();
+                if (!scheduleStore[`${prevYm}-${String(prevDays).padStart(2, '0')}`]) {
+                    generateMonthSchedule(prevYm, false);
                 }
-            });
+                pm++;
+                if (pm > 12) { pm = 1; py++; }
+            }
         }
 
-        const ctx = document.getElementById('dutyChart').getContext('2d');
-        if (chartInstance) chartInstance.destroy();
+        // 1. Find continuation queue index for Day Shift (8 members)
+        let nextDayIdx = 0;
+        const allSortedDates = Object.keys(scheduleStore).sort();
+        const prevDayDates = allSortedDates.filter(d => d < `${yearMonth}-01` && scheduleStore[d]?.dayId);
+        if (prevDayDates.length > 0) {
+            const lastDayMemberId = scheduleStore[prevDayDates[prevDayDates.length - 1]].dayId;
+            const foundIdx = dayMembers.findIndex(m => m.id === lastDayMemberId);
+            if (foundIdx !== -1) {
+                nextDayIdx = (foundIdx + 1) % dayMembers.length;
+            }
+        }
 
-        const labels = Object.values(dutyCounts).map(d => d.name);
-        const data = Object.values(dutyCounts).map(d => d.count);
-        const colors = Object.values(dutyCounts).map(d => d.color);
+        // 2. Find continuation queue index for Night Shift (7 members)
+        let nextNightIdx = 0;
+        const prevNightDates = allSortedDates.filter(d => d < `${yearMonth}-01` && scheduleStore[d]?.nightId);
+        if (prevNightDates.length > 0) {
+            const lastNightMemberId = scheduleStore[prevNightDates[prevNightDates.length - 1]].nightId;
+            const foundIdx = nightMembers.findIndex(m => m.id === lastNightMemberId);
+            if (foundIdx !== -1) {
+                nextNightIdx = (foundIdx + 1) % nightMembers.length;
+            }
+        }
 
-        chartInstance = new Chart(ctx, {
+        // Track monthly night counts for fairness & weekly assigned IDs (Sun-Sat) for strict no-repeat rule
+        const monthNightCounts = {};
+        nightMembers.forEach(m => monthNightCounts[m.id] = 0);
+
+        // Pre-populate counts if partial week from previous month overlaps current Sunday-Saturday week
+        const firstDateObj = new Date(year, month - 1, 1);
+        const weekStartSunday = new Date(firstDateObj);
+        weekStartSunday.setDate(firstDateObj.getDate() - firstDateObj.getDay());
+
+        const weeklyUsedIds = new Set();
+        let cursor = new Date(weekStartSunday);
+        while (cursor < firstDateObj) {
+            const cStr = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}-${String(cursor.getDate()).padStart(2, '0')}`;
+            if (scheduleStore[cStr]?.nightId) {
+                weeklyUsedIds.add(scheduleStore[cStr].nightId);
+            }
+            cursor.setDate(cursor.getDate() + 1);
+        }
+
+        let prevAssignedNightId = prevNightDates.length > 0 ? scheduleStore[prevNightDates[prevNightDates.length - 1]].nightId : null;
+
+        for (let d = 1; d <= daysInMonth; d++) {
+            const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+            const dt = new Date(dateStr + 'T00:00:00');
+
+            // Reset weekly uniqueness set every Sunday (day 0)
+            if (dt.getDay() === 0) {
+                weeklyUsedIds.clear();
+            }
+
+            if (!forceOverwrite && scheduleStore[dateStr] && scheduleStore[dateStr].nightId) {
+                const existingN = scheduleStore[dateStr].nightId;
+                weeklyUsedIds.add(existingN);
+                if (monthNightCounts.hasOwnProperty(existingN)) monthNightCounts[existingN]++;
+                prevAssignedNightId = existingN;
+                if (scheduleStore[dateStr].dayId) {
+                    const fIdx = dayMembers.findIndex(m => m.id === scheduleStore[dateStr].dayId);
+                    if (fIdx !== -1) nextDayIdx = (fIdx + 1) % dayMembers.length;
+                }
+                continue;
+            }
+
+            // Assign Night Shift (strictly no repeat within Sun-Sat week + avoid consecutive days + fair distribution)
+            let chosenNightId = null;
+            const nLen = nightMembers.length;
+            if (nLen > 0) {
+                let candidates = [];
+                for (let step = 0; step < nLen; step++) {
+                    const idx = (nextNightIdx + step) % nLen;
+                    const mem = nightMembers[idx];
+                    if (!weeklyUsedIds.has(mem.id)) {
+                        candidates.push({ mem, idx, step });
+                    }
+                }
+                // Fallback if members < 7
+                if (candidates.length === 0) {
+                    for (let step = 0; step < nLen; step++) {
+                        const idx = (nextNightIdx + step) % nLen;
+                        candidates.push({ mem: nightMembers[idx], idx, step });
+                    }
+                }
+
+                // Prefer candidate who didn't work yesterday AND has lowest monthly count
+                candidates.sort((a, b) => {
+                    const aConsec = (a.mem.id === prevAssignedNightId && nLen > 1) ? 1 : 0;
+                    const bConsec = (b.mem.id === prevAssignedNightId && nLen > 1) ? 1 : 0;
+                    if (aConsec !== bConsec) return aConsec - bConsec;
+                    const countDiff = monthNightCounts[a.mem.id] - monthNightCounts[b.mem.id];
+                    if (countDiff !== 0) return countDiff;
+                    return a.step - b.step;
+                });
+
+                const selected = candidates[0];
+                chosenNightId = selected.mem.id;
+                nextNightIdx = (selected.idx + 1) % nLen;
+                weeklyUsedIds.add(chosenNightId);
+                monthNightCounts[chosenNightId]++;
+                prevAssignedNightId = chosenNightId;
+            }
+
+            // Assign Day Shift (Holidays only, continuous sequence)
+            let chosenDayId = null;
+            if (isHoliday(dateStr) && dayMembers.length > 0) {
+                chosenDayId = dayMembers[nextDayIdx % dayMembers.length].id;
+                nextDayIdx = (nextDayIdx + 1) % dayMembers.length;
+            }
+
+            scheduleStore[dateStr] = {
+                dayId: chosenDayId,
+                nightId: chosenNightId
+            };
+        }
+        saveScheduleStore();
+    }
+
+    function saveScheduleStore() {
+        localStorage.setItem('kkf_schedule_store', JSON.stringify(scheduleStore));
+        localStorage.setItem('kkf_custom_holidays', JSON.stringify(customHolidays));
+    }
+
+    function isHoliday(dateStr) {
+        if (customHolidays.hasOwnProperty(dateStr)) {
+            return customHolidays[dateStr];
+        }
+        const dt = new Date(dateStr + 'T00:00:00');
+        const dow = dt.getDay();
+        return (dow === 0 || dow === 6); // Sunday or Saturday
+    }
+
+    /**
+     * AUTO-GENERATE FAIR SCHEDULE FOR ANY MONTH
+     * - Night Shift: 7 members rotate with strict weekly uniqueness (Sun-Sat no repeats)
+     * - Day Shift: Holiday-only rotation among Day Shift team
+     */
+    function generateMonthSchedule(yearMonth, forceOverwrite = false) {
+        const [year, month] = yearMonth.split('-').map(Number);
+        const daysInMonth = new Date(year, month, 0).getDate();
+        const anchor = new Date(appSettings.anchorDate + 'T00:00:00');
+        const anchorSunday = new Date(anchor);
+        anchorSunday.setDate(anchor.getDate() - anchor.getDay());
+
+        // Count existing day-shift assignments before this month to continue sequence fairly
+        let daySeqIndex = 0;
+        const sortedDates = Object.keys(scheduleStore).sort();
+        for (const k of sortedDates) {
+            if (k < `${yearMonth}-01` && scheduleStore[k]?.dayId) {
+                daySeqIndex++;
+            }
+        }
+
+        for (let d = 1; d <= daysInMonth; d++) {
+            const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+            if (!forceOverwrite && scheduleStore[dateStr] && scheduleStore[dateStr].nightId) {
+                continue;
+            }
+
+            const curDate = new Date(dateStr + 'T00:00:00');
+            const curSunday = new Date(curDate);
+            curSunday.setDate(curDate.getDate() - curDate.getDay());
+
+            // Calculate week index from anchor Sunday
+            const diffWeeks = Math.round((curSunday - anchorSunday) / (7 * 24 * 60 * 60 * 1000));
+            const nLen = nightMembers.length;
+            let nightMemberId = null;
+
+            if (nLen > 0) {
+                const weekShift = ((diffWeeks % nLen) + nLen) % nLen;
+                const memberIdx = (curDate.getDay() + weekShift) % nLen;
+                nightMemberId = nightMembers[memberIdx].id;
+            }
+
+            // Day Shift (Only on Holidays)
+            let dayMemberId = null;
+            if (isHoliday(dateStr) && dayMembers.length > 0) {
+                dayMemberId = dayMembers[daySeqIndex % dayMembers.length].id;
+                daySeqIndex++;
+            }
+
+            scheduleStore[dateStr] = {
+                dayId: dayMemberId,
+                nightId: nightMemberId
+            };
+        }
+        saveScheduleStore();
+    }
+
+    function ensureMonthPopulated(yearMonth) {
+        const [year, month] = yearMonth.split('-').map(Number);
+        const daysInMonth = new Date(year, month, 0).getDate();
+        let missing = false;
+        for (let d = 1; d <= daysInMonth; d++) {
+            const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+            if (!scheduleStore[dateStr]) {
+                missing = true;
+                break;
+            }
+        }
+        if (missing) {
+            generateMonthSchedule(yearMonth, false);
+        }
+    }
+
+    function onMonthChange() {
+        const ym = document.getElementById('month-picker').value;
+        if (!ym) return;
+        ensureMonthPopulated(ym);
+        renderAllViews();
+    }
+
+    function autoGenerateCurrentMonth() {
+        const ym = document.getElementById('month-picker').value;
+        Swal.fire({
+            title: 'จัดตารางเวรอัตโนมัติ?',
+            text: `ระบบจะคำนวณจัดเวรกลางวัน (วันหยุด) และเวรกลางคืน (หมุนเวียน 7 คนไม่ซ้ำวันในสัปดาห์) สำหรับเดือน ${formatThaiMonth(ym)}`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'ตกลง, จัดเวรเลย',
+            cancelButtonText: 'ยกเลิก'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                generateMonthSchedule(ym, true);
+                renderAllViews();
+                Swal.fire('สำเร็จ!', 'จัดตารางเวรอัตโนมัติเรียบร้อยแล้ว', 'success');
+            }
+        });
+    }
+
+    function resetToOrder10() {
+        Swal.fire({
+            title: 'โหลดข้อมูลคำสั่งที่ 10/2569?',
+            text: 'คืนค่ารายชื่อและตารางเวรเดือนพฤศจิกายน 2569 ตามใบคำสั่งต้นฉบับ',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'ยืนยัน',
+            cancelButtonText: 'ยกเลิก'
+        }).then((res) => {
+            if (res.isConfirmed) {
+                dayMembers = JSON.parse(JSON.stringify(DEFAULT_DAY_MEMBERS));
+                nightMembers = JSON.parse(JSON.stringify(DEFAULT_NIGHT_MEMBERS));
+                customHolidays = {};
+                localStorage.setItem('kkf_day_members', JSON.stringify(dayMembers));
+                localStorage.setItem('kkf_night_members', JSON.stringify(nightMembers));
+                document.getElementById('month-picker').value = '2026-11';
+                seedOrder10Data();
+                renderAllViews();
+                Swal.fire('เรียบร้อย', 'โหลดข้อมูลตามคำสั่งที่ 10/2569 แล้ว', 'success');
+            }
+        });
+    }
+
+    function switchTab(tabId, e) {
+        if (e) e.preventDefault();
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.add('d-none'));
+        document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
+        document.getElementById(`tab-${tabId}`).classList.remove('d-none');
+        if (e && e.currentTarget) e.currentTarget.classList.add('active');
+        renderAllViews();
+    }
+
+    function renderAllViews() {
+        renderCalendar();
+        renderDashboard();
+        renderOfficialTables();
+        renderMembersTables();
+        renderHolidaysList();
+    }
+
+    // =========================================================================
+    // 2. RENDER CALENDAR
+    // =========================================================================
+    function renderCalendar() {
+        const ym = document.getElementById('month-picker').value;
+        if (!ym) return;
+        const [year, month] = ym.split('-').map(Number);
+        const firstDow = new Date(year, month - 1, 1).getDay();
+        const daysInMonth = new Date(year, month, 0).getDate();
+        const todayStr = '2026-11-18'; // Current context date
+
+        const tbody = document.getElementById('calendar-body');
+        tbody.innerHTML = '';
+
+        let dayNum = 1;
+        for (let row = 0; row < 6; row++) {
+            const tr = document.createElement('tr');
+            let hasDays = false;
+
+            for (let col = 0; col < 7; col++) {
+                const td = document.createElement('td');
+                td.className = 'calendar-day';
+
+                if ((row === 0 && col < firstDow) || dayNum > daysInMonth) {
+                    td.style.backgroundColor = '#f8fafc';
+                    td.style.cursor = 'default';
+                } else {
+                    hasDays = true;
+                    const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
+                    const holInfo = getHolidayInfo(dateStr);
+                    const holiday = holInfo.isHoliday;
+                    const entry = scheduleStore[dateStr] || {};
+                    const dPerson = dayMembers.find(m => m.id === entry.dayId);
+                    const nPerson = nightMembers.find(m => m.id === entry.nightId);
+
+                    if (holiday) td.classList.add('weekend-bg');
+                    if (dateStr === todayStr) td.classList.add('today-highlight');
+
+                    td.onclick = () => openDayModal(dateStr);
+
+                    const dayBadgeHtml = holiday
+                        ? `<div class="shift-pill-day text-truncate" title="กลางวัน: ${dPerson ? dPerson.name + ' (' + dPerson.phone + ')' : 'ยังไม่ระบุ'}">
+                             ☀️ ${dPerson ? shortenName(dPerson.name) : 'ยังไม่ระบุ'}
+                             <span class="shift-phone-mini">${dPerson ? dPerson.phone : ''}</span>
+                           </div>`
+                        : `<div class="shift-pill-workday text-truncate">🏢 วันทำการปกติ</div>`;
+
+                    const nightBadgeHtml = `<div class="shift-pill-night text-truncate" title="กลางคืน: ${nPerson ? nPerson.name + ' (' + nPerson.phone + ')' : 'ยังไม่ระบุ'}">
+                                              🌙 ${nPerson ? shortenName(nPerson.name) : 'ยังไม่ระบุ'}
+                                              <span class="shift-phone-mini">${nPerson ? nPerson.phone : ''}</span>
+                                            </div>`;
+
+                    const topBadge = dateStr === todayStr
+                        ? '<span class="badge bg-danger" style="font-size:0.6rem;">วันนี้</span>'
+                        : (holiday ? `<span class="badge bg-warning text-dark text-truncate" style="font-size:0.58rem; max-width:78px;" title="${holInfo.label}">${holInfo.label === 'วันเสาร์' || holInfo.label === 'วันอาทิตย์' ? 'หยุด' : holInfo.label}</span>` : '');
+
+                    td.innerHTML = `
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="fw-bold ${col === 0 || holiday ? 'text-danger' : (col === 6 ? 'text-primary' : 'text-dark')}">${dayNum}</span>
+                            ${topBadge}
+                        </div>
+                        ${dayBadgeHtml}
+                        ${nightBadgeHtml}
+                    `;
+                    dayNum++;
+                }
+                tr.appendChild(td);
+            }
+            if (hasDays) tbody.appendChild(tr);
+        }
+    }
+
+    function shortenName(fullName) {
+        // Remove prefixes to fit cleanly in calendar cell while keeping full name on hover/modal
+        return fullName.replace(/^(นางสาว|นาง|นาย)\s*/, '');
+    }
+
+    // =========================================================================
+    // 3. INTERACTIVE DAY MODAL (POP-UP)
+    // =========================================================================
+    function openDayModal(dateStr) {
+        document.getElementById('modal-date-str').value = dateStr;
+        const dt = new Date(dateStr + 'T00:00:00');
+        document.getElementById('modal-thai-date').innerText = dt.toLocaleDateString('th-TH', {
+            weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+        const holInfo = getHolidayInfo(dateStr);
+        const holiday = holInfo.isHoliday;
+        document.getElementById('modal-holiday-toggle').checked = holiday;
+        document.getElementById('modal-holiday-badge').innerText = holInfo.label || 'วันหยุดราชการ';
+
+        const entry = scheduleStore[dateStr] || {};
+
+        // Populate Day Shift Select
+        const daySel = document.getElementById('modal-day-select');
+        daySel.innerHTML = '<option value="">-- เลือกเจ้าหน้าที่เวรกลางวัน --</option>';
+        dayMembers.forEach(m => {
+            const opt = document.createElement('option');
+            opt.value = m.id;
+            opt.textContent = `${m.name} (${m.phone})`;
+            if (entry.dayId === m.id) opt.selected = true;
+            daySel.appendChild(opt);
+        });
+        daySel.onchange = updateModalPhones;
+
+        // Populate Night Shift Select
+        const nightSel = document.getElementById('modal-night-select');
+        nightSel.innerHTML = '<option value="">-- เลือกเจ้าหน้าที่เวรกลางคืน --</option>';
+        nightMembers.forEach(m => {
+            const opt = document.createElement('option');
+            opt.value = m.id;
+            opt.textContent = `${m.name} (${m.phone})`;
+            if (entry.nightId === m.id) opt.selected = true;
+            nightSel.appendChild(opt);
+        });
+        nightSel.onchange = updateModalPhones;
+
+        toggleHolidayUI(holiday);
+        updateModalPhones();
+
+        new bootstrap.Modal(document.getElementById('dayDetailModal')).show();
+    }
+
+    function toggleHolidayInModal() {
+        const isHol = document.getElementById('modal-holiday-toggle').checked;
+        toggleHolidayUI(isHol);
+    }
+
+    function toggleHolidayUI(isHol) {
+        const dayBox = document.getElementById('modal-day-shift-box');
+        const workNotice = document.getElementById('modal-workday-notice');
+        if (isHol) {
+            dayBox.classList.remove('d-none');
+            workNotice.classList.add('d-none');
+        } else {
+            dayBox.classList.add('d-none');
+            workNotice.classList.remove('d-none');
+        }
+    }
+
+    function updateModalPhones() {
+        const dId = document.getElementById('modal-day-select').value;
+        const nId = document.getElementById('modal-night-select').value;
+        const dMem = dayMembers.find(m => m.id === dId);
+        const nMem = nightMembers.find(m => m.id === nId);
+
+        document.getElementById('modal-day-phone').innerHTML = `<i class="fa-solid fa-phone me-1"></i> เบอร์โทร: <b>${dMem ? dMem.phone : '-'}</b>`;
+        const dCall = document.getElementById('modal-day-call');
+        if (dMem) {
+            dCall.href = `tel:${dMem.phone.replace(/-/g, '')}`;
+            dCall.classList.remove('d-none');
+        } else {
+            dCall.classList.add('d-none');
+        }
+
+        document.getElementById('modal-night-phone').innerHTML = `<i class="fa-solid fa-phone me-1"></i> เบอร์โทร: <b>${nMem ? nMem.phone : '-'}</b>`;
+        const nCall = document.getElementById('modal-night-call');
+        if (nMem) {
+            nCall.href = `tel:${nMem.phone.replace(/-/g, '')}`;
+            nCall.classList.remove('d-none');
+        } else {
+            nCall.classList.add('d-none');
+        }
+    }
+
+    function saveDayModalChanges() {
+        const dateStr = document.getElementById('modal-date-str').value;
+        const isHol = document.getElementById('modal-holiday-toggle').checked;
+        const dayId = isHol ? (document.getElementById('modal-day-select').value || null) : null;
+        const nightId = document.getElementById('modal-night-select').value || null;
+
+        if (isHol) {
+            const existingLabel = getHolidayInfo(dateStr).label;
+            customHolidays[dateStr] = existingLabel || 'วันหยุดราชการ';
+        } else {
+            customHolidays[dateStr] = false;
+        }
+        scheduleStore[dateStr] = { dayId, nightId };
+        saveScheduleStore();
+
+        bootstrap.Modal.getInstance(document.getElementById('dayDetailModal')).hide();
+        renderAllViews();
+        Swal.fire({ toast: true, position: 'bottom-end', icon: 'success', title: 'บันทึกการแก้ไขเวรเรียบร้อย', showConfirmButton: false, timer: 2000 });
+    }
+
+    // =========================================================================
+    // 4. DASHBOARD & CHARTS
+    // =========================================================================
+    function renderDashboard() {
+        const ym = document.getElementById('month-picker').value;
+        const [year, month] = ym.split('-').map(Number);
+        const daysInMonth = new Date(year, month, 0).getDate();
+
+        document.getElementById('dash-subtitle').innerText = `สรุปสถิติการปฏิบัติหน้าที่เวรยาม ประจำเดือน ${formatThaiMonth(ym)}`;
+        document.getElementById('kpi-day-members').innerText = `${dayMembers.length} คน`;
+        document.getElementById('kpi-night-members').innerText = `${nightMembers.length} คน`;
+
+        let holidayCount = 0;
+        const dayCounts = {};
+        const nightCounts = {};
+        const dayDatesList = {};
+        const nightDatesList = {};
+        dayMembers.forEach(m => { dayCounts[m.id] = 0; dayDatesList[m.id] = []; });
+        nightMembers.forEach(m => { nightCounts[m.id] = 0; nightDatesList[m.id] = []; });
+
+        for (let d = 1; d <= daysInMonth; d++) {
+            const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+            if (isHoliday(dateStr)) holidayCount++;
+            const entry = scheduleStore[dateStr];
+            if (entry) {
+                if (entry.dayId && dayCounts.hasOwnProperty(entry.dayId)) {
+                    dayCounts[entry.dayId]++;
+                    dayDatesList[entry.dayId].push(d);
+                }
+                if (entry.nightId && nightCounts.hasOwnProperty(entry.nightId)) {
+                    nightCounts[entry.nightId]++;
+                    nightDatesList[entry.nightId].push(d);
+                }
+            }
+        }
+        document.getElementById('kpi-holiday-days').innerText = `${holidayCount} วัน`;
+
+        // Render Breakdown Summary Tables
+        document.getElementById('dash-day-summary').innerHTML = dayMembers.map((m, i) => `
+            <tr>
+                <td>${i + 1}. ${m.name}</td>
+                <td class="text-center fw-bold text-warning-emphasis">${dayCounts[m.id]} วัน</td>
+                <td class="small">${dayDatesList[m.id].length ? 'วันที่ ' + dayDatesList[m.id].join(', ') : '-'}</td>
+            </tr>
+        `).join('');
+
+        document.getElementById('dash-night-summary').innerHTML = nightMembers.map((m, i) => `
+            <tr>
+                <td>${i + 1}. ${m.name}</td>
+                <td class="text-center fw-bold text-primary">${nightCounts[m.id]} คืน</td>
+                <td class="small">${nightDatesList[m.id].length ? 'วันที่ ' + nightDatesList[m.id].join(', ') : '-'}</td>
+            </tr>
+        `).join('');
+
+        // Current Context Date (2026-11-18)
+        const todayEntry = scheduleStore['2026-11-18'];
+        if (todayEntry) {
+            const nMem = nightMembers.find(m => m.id === todayEntry.nightId);
+            document.getElementById('kpi-today-duty').innerText = nMem ? `🌙 ${shortenName(nMem.name)}` : '-';
+        }
+    function updateOrderRefFromDoc(val) {
+        appSettings.orderText = val;
+        document.getElementById('setting-order-text').value = val;
+        localStorage.setItem('kkf_settings', JSON.stringify(appSettings));
+        renderOfficialTables();
+    }
+
+    // =========================================================================
+    // 6. MEMBER MANAGEMENT & HOLIDAYS
+    // =========================================================================
+    function renderMembersTables() {
+        document.getElementById('badge-day-count').innerText = `${dayMembers.length} คน`;
+        document.getElementById('badge-night-count').innerText = `${nightMembers.length} คน`;
+
+        document.getElementById('day-members-tbody').innerHTML = dayMembers.map((m, idx) => `
+            <tr>
+                <td class="fw-bold">${idx + 1}</td>
+                <td>
+                    <div class="d-flex align-items-center">
+                        <div class="avatar-circle me-2 bg-warning text-dark" style="width:32px;height:32px;font-size:0.85rem;">${shortenName(m.name).charAt(0)}</div>
+                        <span class="fw-semibold">${m.name}</span>
+                    </div>
+                </td>
+                <td><span class="badge bg-light text-dark border"><i class="fa-solid fa-phone me-1 text-muted"></i>${m.phone}</span></td>
+                <td class="text-center text-nowrap">
+                    <button class="btn btn-sm btn-light border" onclick="moveMember('day', ${idx}, -1)" ${idx === 0 ? 'disabled' : ''} title="เลื่อนขึ้น"><i class="fa-solid fa-arrow-up"></i></button>
+                    <button class="btn btn-sm btn-light border me-1" onclick="moveMember('day', ${idx}, 1)" ${idx === dayMembers.length - 1 ? 'disabled' : ''} title="เลื่อนลง"><i class="fa-solid fa-arrow-down"></i></button>
+                    <button class="btn btn-sm btn-outline-primary" onclick="openMemberModal('day', '${m.id}')"><i class="fa-solid fa-pen"></i></button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteMember('day', '${m.id}')"><i class="fa-solid fa-trash"></i></button>
+                </td>
+            </tr>
+        `).join('');
+
+        document.getElementById('night-members-tbody').innerHTML = nightMembers.map((m, idx) => `
+            <tr>
+                <td class="fw-bold">${idx + 1}</td>
+                <td>
+                    <div class="d-flex align-items-center">
+                        <div class="avatar-circle me-2 bg-primary" style="width:32px;height:32px;font-size:0.85rem;">${shortenName(m.name).charAt(0)}</div>
+                        <span class="fw-semibold">${m.name}</span>
+                    </div>
+                </td>
+                <td><span class="badge bg-light text-dark border"><i class="fa-solid fa-phone me-1 text-muted"></i>${m.phone}</span></td>
+                <td class="text-center text-nowrap">
+                    <button class="btn btn-sm btn-light border" onclick="moveMember('night', ${idx}, -1)" ${idx === 0 ? 'disabled' : ''} title="เลื่อนขึ้น"><i class="fa-solid fa-arrow-up"></i></button>
+                    <button class="btn btn-sm btn-light border me-1" onclick="moveMember('night', ${idx}, 1)" ${idx === nightMembers.length - 1 ? 'disabled' : ''} title="เลื่อนลง"><i class="fa-solid fa-arrow-down"></i></button>
+                    <button class="btn btn-sm btn-outline-primary" onclick="openMemberModal('night', '${m.id}')"><i class="fa-solid fa-pen"></i></button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteMember('night', '${m.id}')"><i class="fa-solid fa-trash"></i></button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function moveMember(shift, index, dir) {
+        const list = shift === 'day' ? dayMembers : nightMembers;
+        const target = index + dir;
+        if (target < 0 || target >= list.length) return;
+        [list[index], list[target]] = [list[target], list[index]];
+        localStorage.setItem('kkf_day_members', JSON.stringify(dayMembers));
+        localStorage.setItem('kkf_night_members', JSON.stringify(nightMembers));
+        renderAllViews();
+    }
+
+    function renderHolidaysList() {
+        const ym = document.getElementById('month-picker').value;
+        if (!ym) return;
+        const [year, month] = ym.split('-').map(Number);
+        const daysInMonth = new Date(year, month, 0).getDate();
+        document.getElementById('holiday-mgr-month').innerText = formatThaiMonth(ym);
+        document.getElementById('new-holiday-date').value = `${ym}-01`;
+
+        const badges = [];
+        for (let d = 1; d <= daysInMonth; d++) {
+            const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+            const info = getHolidayInfo(dateStr);
+            if (info.isHoliday) {
+                const isWeekend = info.label === 'วันเสาร์' || info.label === 'วันอาทิตย์';
+                badges.push(`
+                    <span class="badge ${isWeekend ? 'bg-warning text-dark' : 'bg-danger text-white'} p-2 d-flex align-items-center gap-2">
+                        <span>วันที่ ${d} (${info.label})</span>
+                        <i class="fa-solid fa-xmark" style="cursor:pointer;" onclick="removeHoliday('${dateStr}')" title="ยกเลิกวันหยุดนี้"></i>
+                    </span>
+                `);
+            }
+        }
+        document.getElementById('month-holidays-list').innerHTML = badges.length ? badges.join('') : '<span class="text-muted small">ไม่มีวันหยุดในเดือนนี้</span>';
+    }
+
+    function addCustomHoliday() {
+        const dateStr = document.getElementById('new-holiday-date').value;
+        const name = document.getElementById('new-holiday-name').value.trim() || 'วันหยุดนักขัตฤกษ์';
+        if (!dateStr) return;
+        customHolidays[dateStr] = name;
+        saveScheduleStore();
+        generateMonthSchedule(dateStr.slice(0, 7), true);
+        renderAllViews();
+        Swal.fire({ toast: true, position: 'bottom-end', icon: 'success', title: `เพิ่มวันหยุด ${name} และคำนวณเวรใหม่แล้ว`, showConfirmButton: false, timer: 2200 });
+    }
+
+    function removeHoliday(dateStr) {
+        customHolidays[dateStr] = false;
+        saveScheduleStore();
+        generateMonthSchedule(dateStr.slice(0, 7), true);
+        renderAllViews();
+    }
+        });
+
+        // Night Shift Chart
+        const ctxNight = document.getElementById('nightShiftChart').getContext('2d');
+        if (nightChartObj) nightChartObj.destroy();
+        nightChartObj = new Chart(ctxNight, {
             type: 'bar',
             data: {
-                labels: labels,
+                labels: nightMembers.map(m => shortenName(m.name)),
                 datasets: [{
-                    label: 'จำนวนวันเข้าเวร (วัน)',
-                    data: data,
-                    backgroundColor: colors,
-                    borderRadius: 8
+                    label: 'จำนวนคืนเข้าเวรกลางคืน (คืน)',
+                    data: nightMembers.map(m => nightCounts[m.id]),
+                    backgroundColor: '#312e81',
+                    borderRadius: 6
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                scales: {
-                    y: { beginAtZero: true, ticks: { precision: 0, stepSize: 1 } }
-                },
-                plugins: {
-                    legend: { display: false }
-                }
+                scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+                plugins: { legend: { display: false } }
             }
         });
     }
 
-    function renderCalendar() {
-        const yearMonth = document.getElementById('month-picker').value;
-        if (!yearMonth) return;
-
-        const [year, month] = yearMonth.split('-').map(Number);
-        const firstDayIndex = new Date(year, month - 1, 1).getDay();
+    // =========================================================================
+    // 5. OFFICIAL GOVERNMENT DOCUMENT VIEW (LIKE IMAGE 1 & 2)
+    // =========================================================================
+    function renderOfficialTables() {
+        const ym = document.getElementById('month-picker').value;
+        const [year, month] = ym.split('-').map(Number);
         const daysInMonth = new Date(year, month, 0).getDate();
-        const todayStr = new Date().toISOString().slice(0, 10);
+        const thaiMonthYear = toThaiDigits(formatThaiMonth(ym));
 
-        const calendarBody = document.getElementById('calendar-body');
-        calendarBody.innerHTML = '';
+        document.getElementById('doc-day-title').innerText = `บัญชีรายชื่อผู้อยู่เวรยาม (เวลากลางวัน วันหยุดราชการ) ประจำเดือน ${thaiMonthYear}`;
+        document.getElementById('doc-night-title').innerText = `บัญชีรายชื่อผู้อยู่เวรยาม (เวลากลางคืน) ประจำเดือน ${thaiMonthYear}`;
+        document.getElementById('doc-order-ref').innerText = appSettings.orderText;
+        document.getElementById('doc-night-order-ref').innerText = appSettings.orderText;
 
-        let dateCounter = 1;
-        for (let i = 0; i < 6; i++) {
-            let row = document.createElement('tr');
-            let hasDate = false;
+        // Collect dates per member
+        const dayDatesMap = {};
+        const nightDatesMap = {};
+        dayMembers.forEach(m => dayDatesMap[m.id] = []);
+        nightMembers.forEach(m => nightDatesMap[m.id] = []);
 
-            for (let j = 0; j < 7; j++) {
-                let cell = document.createElement('td');
-                cell.className = 'calendar-day p-2';
-
-                if ((i === 0 && j < firstDayIndex) || dateCounter > daysInMonth) {
-                    cell.innerHTML = '';
-                    cell.style.cursor = 'default';
-                } else {
-                    hasDate = true;
-                    const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(dateCounter).padStart(2, '0')}`;
-                    const shifts = getShiftsForDate(dateStr);
-                    const isToday = (dateStr === todayStr);
-
-                    cell.onclick = () => openDayDetailModal(dateStr);
-
-                    if (isToday) cell.classList.add('today-highlight');
-
-                    let shiftsHtml = shifts.map(s => `
-                        <div class="badge-shift text-white shadow-sm text-truncate" style="background-color: ${s.color};" title="${s.name}">
-                            <span><i class="fa-solid fa-user me-1"></i>${s.name}</span>
-                            ${s.isOverride ? '<i class="fa-solid fa-pen text-white ms-1" style="font-size:0.65rem;" title="แก้ไขแล้ว"></i>' : ''}
-                        </div>
-                    `).join('');
-
-                    cell.innerHTML = `
-                        <div class="d-flex justify-content-between align-items-center mb-1">
-                            <span class="fw-bold ${j === 0 ? 'text-danger' : (j === 6 ? 'text-primary' : '')}">${dateCounter}</span>
-                            ${isToday ? '<span class="badge bg-danger" style="font-size:0.58rem;">วันนี้</span>' : ''}
-                        </div>
-                        <div class="d-flex flex-column gap-1">${shiftsHtml}</div>
-                    `;
-                    dateCounter++;
-                }
-                row.appendChild(cell);
+        for (let d = 1; d <= daysInMonth; d++) {
+            const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+            const entry = scheduleStore[dateStr];
+            if (entry) {
+                if (entry.dayId && dayDatesMap[entry.dayId]) dayDatesMap[entry.dayId].push(d);
+                if (entry.nightId && nightDatesMap[entry.nightId]) nightDatesMap[entry.nightId].push(d);
             }
-            if (hasDate) calendarBody.appendChild(row);
         }
+
+        const dayTbody = document.getElementById('official-day-tbody');
+        dayTbody.innerHTML = dayMembers.map((m, i) => `
+            <tr>
+                <td class="text-center">${toThaiDigits(i + 1)}</td>
+                <td>${m.name}</td>
+                <td>${dayDatesMap[m.id].length > 0 ? 'วันที่  ' + toThaiDigits(dayDatesMap[m.id].join('   ')) : '-'}</td>
+                <td class="text-center">${toThaiDigits(m.phone.replace(/-/g, ' '))}</td>
+                <td></td>
+            </tr>
+        `).join('');
+
+        const nightTbody = document.getElementById('official-night-tbody');
+        nightTbody.innerHTML = nightMembers.map((m, i) => `
+            <tr>
+                <td class="text-center">${toThaiDigits(i + 1)}</td>
+                <td>${m.name}</td>
+                <td>${nightDatesMap[m.id].length > 0 ? 'วันที่  ' + toThaiDigits(nightDatesMap[m.id].join('   ')) : '-'}</td>
+                <td class="text-center">${toThaiDigits(m.phone.replace(/-/g, ' '))}</td>
+                <td></td>
+            </tr>
+        `).join('');
     }
 
-    function renderMembers() {
-        const tbody = document.getElementById('member-table-body');
-        tbody.innerHTML = '';
+    function toThaiDigits(str) {
+        const thaiNums = ['๐', '๑', '๒', '๓', '๔', '๕', '๖', '๗', '๘', '๙'];
+        return String(str).replace(/[0-9]/g, d => thaiNums[d]);
+    }
 
-        members.forEach((m, index) => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td><strong>${index + 1}</strong></td>
+    function formatThaiMonth(ym) {
+        const [y, m] = ym.split('-').map(Number);
+        const dt = new Date(y, m - 1, 1);
+        return dt.toLocaleDateString('th-TH', { month: 'long', year: 'numeric' });
+    }
+
+    // =========================================================================
+    // 6. MEMBER MANAGEMENT (DAY & NIGHT)
+    // =========================================================================
+    function renderMembersTables() {
+        document.getElementById('badge-day-count').innerText = `${dayMembers.length} คน`;
+        document.getElementById('badge-night-count').innerText = `${nightMembers.length} คน`;
+
+        document.getElementById('day-members-tbody').innerHTML = dayMembers.map((m, idx) => `
+            <tr>
+                <td class="fw-bold">${idx + 1}</td>
                 <td>
                     <div class="d-flex align-items-center">
-                        <div class="avatar-circle me-3" style="background-color: ${m.color};">
-                            ${m.name.charAt(0)}
-                        </div>
-                        <span class="fw-bold">${m.name}</span>
+                        <div class="avatar-circle me-2 bg-warning text-dark" style="width:32px;height:32px;font-size:0.85rem;">${shortenName(m.name).charAt(0)}</div>
+                        <span class="fw-semibold">${m.name}</span>
                     </div>
                 </td>
-                <td>${m.role || '-'}</td>
-                <td><span class="badge" style="background-color: ${m.color};">${m.color}</span></td>
+                <td><span class="badge bg-light text-dark border"><i class="fa-solid fa-phone me-1 text-muted"></i>${m.phone}</span></td>
                 <td class="text-center">
-                    <button class="btn btn-sm btn-outline-primary me-1" onclick="openEditMemberModal(${m.id})">
-                        <i class="fa-solid fa-pen"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger" onclick="deleteMember(${m.id})">
-                        <i class="fa-solid fa-trash"></i>
-                    </button>
+                    <button class="btn btn-sm btn-outline-primary me-1" onclick="openMemberModal('day', '${m.id}')"><i class="fa-solid fa-pen"></i></button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteMember('day', '${m.id}')"><i class="fa-solid fa-trash"></i></button>
                 </td>
-            `;
-            tbody.appendChild(tr);
-        });
-        localStorage.setItem('fair_weekly_members', JSON.stringify(members));
+            </tr>
+        `).join('');
+
+        document.getElementById('night-members-tbody').innerHTML = nightMembers.map((m, idx) => `
+            <tr>
+                <td class="fw-bold">${idx + 1}</td>
+                <td>
+                    <div class="d-flex align-items-center">
+                        <div class="avatar-circle me-2 bg-primary" style="width:32px;height:32px;font-size:0.85rem;">${shortenName(m.name).charAt(0)}</div>
+                        <span class="fw-semibold">${m.name}</span>
+                    </div>
+                </td>
+                <td><span class="badge bg-light text-dark border"><i class="fa-solid fa-phone me-1 text-muted"></i>${m.phone}</span></td>
+                <td class="text-center">
+                    <button class="btn btn-sm btn-outline-primary me-1" onclick="openMemberModal('night', '${m.id}')"><i class="fa-solid fa-pen"></i></button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteMember('night', '${m.id}')"><i class="fa-solid fa-trash"></i></button>
+                </td>
+            </tr>
+        `).join('');
     }
 
-    function openAddMemberModal() {
-        document.getElementById('member-id').value = '';
-        document.getElementById('member-name').value = '';
-        document.getElementById('member-role').value = '';
-        document.getElementById('member-color').value = '#2563eb';
-        document.getElementById('memberModalTitle').innerHTML = '<i class="fa-solid fa-user-plus me-1"></i> เพิ่มสมาชิกใหม่';
-    }
-
-    function openEditMemberModal(id) {
-        const member = members.find(m => m.id === id);
-        if (!member) return;
-        document.getElementById('member-id').value = member.id;
-        document.getElementById('member-name').value = member.name;
-        document.getElementById('member-role').value = member.role || '';
-        document.getElementById('member-color').value = member.color;
-        document.getElementById('memberModalTitle').innerHTML = '<i class="fa-solid fa-user-pen me-1"></i> แก้ไขสมาชิก';
-        
-        const modal = new bootstrap.Modal(document.getElementById('memberModal'));
-        modal.show();
-    }
-
-    function handleSaveMember(e) {
-        e.preventDefault();
-        const id = document.getElementById('member-id').value;
-        const name = document.getElementById('member-name').value;
-        const role = document.getElementById('member-role').value;
-        const color = document.getElementById('member-color').value;
+    function openMemberModal(shift = 'day', id = '') {
+        document.getElementById('edit-member-id').value = id;
+        document.getElementById('edit-member-shift').value = shift;
+        document.getElementById('edit-member-shift').disabled = Boolean(id);
 
         if (id) {
-            const idx = members.findIndex(m => m.id == id);
-            if (idx !== -1) members[idx] = { id: Number(id), name, role, color };
+            const list = shift === 'day' ? dayMembers : nightMembers;
+            const mem = list.find(m => m.id === id);
+            document.getElementById('memberModalTitle').innerText = 'แก้ไขข้อมูลเจ้าหน้าที่';
+            document.getElementById('edit-member-name').value = mem.name;
+            document.getElementById('edit-member-phone').value = mem.phone;
         } else {
-            members.push({ id: Date.now(), name, role, color });
+            document.getElementById('memberModalTitle').innerText = 'เพิ่มรายชื่อเจ้าหน้าที่ใหม่';
+            document.getElementById('edit-member-name').value = '';
+            document.getElementById('edit-member-phone').value = '';
         }
-
-        renderMembers();
-        recalculateShifts();
-
-        const modal = bootstrap.Modal.getInstance(document.getElementById('memberModal'));
-        if (modal) modal.hide();
-        showToast('บันทึกข้อมูลสมาชิกเรียบร้อยแล้ว');
+        new bootstrap.Modal(document.getElementById('memberModal')).show();
     }
 
-    function deleteMember(id) {
-        if (members.length <= 1) {
-            alert('ต้องมีสมาชิกอย่างน้อย 1 คนในระบบ');
+    function saveMemberForm(e) {
+        e.preventDefault();
+        const id = document.getElementById('edit-member-id').value;
+        const shift = document.getElementById('edit-member-shift').value;
+        const name = document.getElementById('edit-member-name').value.trim();
+        const phone = document.getElementById('edit-member-phone').value.trim();
+
+        const list = shift === 'day' ? dayMembers : nightMembers;
+        if (id) {
+            const idx = list.findIndex(m => m.id === id);
+            if (idx !== -1) list[idx] = { id, name, phone };
+        } else {
+            list.push({ id: `${shift}_${Date.now()}`, name, phone });
+        }
+
+        localStorage.setItem('kkf_day_members', JSON.stringify(dayMembers));
+        localStorage.setItem('kkf_night_members', JSON.stringify(nightMembers));
+        bootstrap.Modal.getInstance(document.getElementById('memberModal')).hide();
+        renderAllViews();
+        Swal.fire({ toast: true, position: 'bottom-end', icon: 'success', title: 'บันทึกรายชื่อเรียบร้อย', showConfirmButton: false, timer: 2000 });
+    }
+
+    function deleteMember(shift, id) {
+        const list = shift === 'day' ? dayMembers : nightMembers;
+        if (list.length <= 1) {
+            Swal.fire('ไม่สามารถลบได้', 'ต้องมีรายชื่ออย่างน้อย 1 คนในชุดปฏิบัติงาน', 'error');
             return;
         }
-        if (confirm('ต้องการลบสมาชิกท่านนี้ใช่หรือไม่? ระบบจะจัดตารางเวรใหม่ให้อัตโนมัติ')) {
-            members = members.filter(m => m.id !== id);
-            renderMembers();
-            recalculateShifts();
-            showToast('ลบสมาชิกเรียบร้อยแล้ว');
-        }
+        Swal.fire({
+            title: 'ยืนยันการลบรายชื่อ?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'ลบรายชื่อ',
+            cancelButtonText: 'ยกเลิก'
+        }).then((res) => {
+            if (res.isConfirmed) {
+                if (shift === 'day') {
+                    dayMembers = dayMembers.filter(m => m.id !== id);
+                    localStorage.setItem('kkf_day_members', JSON.stringify(dayMembers));
+                } else {
+                    nightMembers = nightMembers.filter(m => m.id !== id);
+                    localStorage.setItem('kkf_night_members', JSON.stringify(nightMembers));
+                }
+                renderAllViews();
+            }
+        });
     }
 
-    function saveSettings(e) {
-        e.preventDefault();
-        settings.anchorDate = document.getElementById('start-date').value;
-        localStorage.setItem('fair_weekly_settings', JSON.stringify(settings));
-        
-        recalculateShifts();
-        showToast('บันทึกการตั้งค่ารอบเวรเรียบร้อยแล้ว');
+    // =========================================================================
+    // 7. LINE MESSAGING API & GOOGLE SHEETS SYNC
+    // =========================================================================
+    function saveGeneralSettings() {
+        appSettings.orderText = document.getElementById('setting-order-text').value;
+        appSettings.anchorDate = document.getElementById('setting-anchor-date').value;
+        localStorage.setItem('kkf_settings', JSON.stringify(appSettings));
+        renderOfficialTables();
+        Swal.fire('สำเร็จ', 'บันทึกการตั้งค่าคำสั่งเรียบร้อยแล้ว', 'success');
     }
 
-    function saveLineSettings(e) {
-        e.preventDefault();
-        lineSettings.token = document.getElementById('line-token').value.trim();
-        lineSettings.targetId = document.getElementById('line-target-id').value.trim();
-        localStorage.setItem('fair_line_settings', JSON.stringify(lineSettings));
-        showToast('บันทึกการตั้งค่า LINE API เรียบร้อยแล้ว');
+    function saveLineConfig() {
+        appSettings.lineToken = document.getElementById('line-token').value.trim();
+        appSettings.lineTargetId = document.getElementById('line-target-id').value.trim();
+        localStorage.setItem('kkf_settings', JSON.stringify(appSettings));
+        Swal.fire('สำเร็จ', 'บันทึกการตั้งค่า LINE Messaging API แล้ว', 'success');
     }
 
-    function saveApiUrl() {
-        const url = document.getElementById('api-url').value.trim();
-        settings.apiUrl = url;
-        localStorage.setItem('fair_weekly_settings', JSON.stringify(settings));
-        updateSyncIndicator();
-        showToast('บันทึก Web App URL เรียบร้อยแล้ว');
+    function saveGasUrl() {
+        appSettings.gasUrl = document.getElementById('gas-api-url').value.trim();
+        localStorage.setItem('kkf_settings', JSON.stringify(appSettings));
+        updateSyncStatusUI();
+        Swal.fire('สำเร็จ', 'บันทึก Google Apps Script URL เรียบร้อยแล้ว', 'success');
     }
 
-    function updateSyncIndicator() {
-        const indicator = document.getElementById('sync-mode-indicator');
-        if (settings.apiUrl) {
-            indicator.innerText = 'Google Sheets Mode';
-            indicator.className = 'text-success fw-bold';
+    function updateSyncStatusUI() {
+        const el = document.getElementById('sync-mode-indicator');
+        if (appSettings.gasUrl) {
+            el.innerText = 'Google Sheets API';
+            el.className = 'text-success fw-bold';
         } else {
-            indicator.innerText = 'LocalStorage Mode';
-            indicator.className = 'text-warning';
+            el.innerText = 'LocalStorage';
+            el.className = 'text-warning';
         }
     }
 
-    async function sendSingleDayToLine() {
-        if (!lineSettings.token || !lineSettings.targetId) {
-            alert('กรุณากรอก LINE Channel Access Token และ Target ID ในหน้าตั้งค่าก่อน');
+    async function pushLineFlex(payload) {
+        if (!appSettings.lineToken || !appSettings.lineTargetId) {
+            Swal.fire('ยังไม่ได้ตั้งค่า LINE', 'กรุณากรอก Channel Access Token และ Target ID ในเมนูตั้งค่าก่อน', 'warning');
             return;
         }
+        try {
+            Swal.fire({ title: 'กำลังส่งแจ้งเตือน LINE...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            const res = await fetch('https://api.line.me/v2/bot/message/push', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${appSettings.lineToken}`
+                },
+                body: JSON.stringify(payload)
+            });
+            if (res.ok) {
+                Swal.fire('ส่งสำเร็จ!', 'ส่งข้อความแจ้งเตือนเข้า LINE เรียบร้อยแล้ว', 'success');
+            } else {
+                const err = await res.json();
+                Swal.fire('ส่งไม่สำเร็จ', err.message || 'กรุณาตรวจสอบ Token หรือ Target ID', 'error');
+            }
+        } catch (e) {
+            Swal.fire('เกิดข้อผิดพลาด', 'เบราว์เซอร์อาจติด CORS Policy แนะนำให้ส่งผ่าน Google Apps Script Webhook: ' + e.message, 'error');
+        }
+    }
 
-        const dateStr = document.getElementById('modal-selected-date').value;
-        const shifts = getShiftsForDate(dateStr);
-        const person = shifts[0];
-        
-        const dateObj = new Date(dateStr + 'T00:00:00');
-        const thaiDate = dateObj.toLocaleDateString('th-TH', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    function sendSingleDayLine() {
+        const dateStr = document.getElementById('modal-date-str').value;
+        const dt = new Date(dateStr + 'T00:00:00');
+        const thaiDate = dt.toLocaleDateString('th-TH', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+        const holiday = isHoliday(dateStr);
+        const entry = scheduleStore[dateStr] || {};
+        const dMem = dayMembers.find(m => m.id === entry.dayId);
+        const nMem = nightMembers.find(m => m.id === entry.nightId);
 
-        const payload = {
-            to: lineSettings.targetId,
+        const bodyContents = [];
+        if (holiday) {
+            bodyContents.push(
+                { type: 'text', text: '☀️ เวรกลางวัน (08.30 - 16.30 น.)', weight: 'bold', size: 'sm', color: '#d97706' },
+                { type: 'text', text: dMem ? `${dMem.name}\nโทร: ${dMem.phone}` : 'ยังไม่ระบุ', wrap: true, size: 'sm', margin: 'xs' },
+                { type: 'separator', margin: 'md' }
+            );
+        } else {
+            bodyContents.push(
+                { type: 'text', text: '🏢 กลางวัน: วันทำการปกติ', size: 'sm', color: '#64748b' },
+                { type: 'separator', margin: 'md' }
+            );
+        }
+
+        bodyContents.push(
+            { type: 'text', text: '🌙 เวรกลางคืน (16.30 - 08.30 น.)', weight: 'bold', size: 'sm', color: '#1e3a8a', margin: 'md' },
+            { type: 'text', text: nMem ? `${nMem.name}\nโทร: ${nMem.phone}` : 'ยังไม่ระบุ', wrap: true, size: 'sm', margin: 'xs' }
+        );
+
+        pushLineFlex({
+            to: appSettings.lineTargetId,
             messages: [{
                 type: 'flex',
-                altText: `แจ้งเตือนเวรวันที่ ${thaiDate}`,
+                altText: `แจ้งเตือนเวรยามศูนย์ป่าไม้ขอนแก่น ${thaiDate}`,
                 contents: {
                     type: 'bubble',
                     header: {
-                        type: 'box',
-                        layout: 'vertical',
-                        backgroundColor: '#2563eb',
+                        type: 'box', layout: 'vertical', backgroundColor: '#1e3a8a',
                         contents: [
-                            { type: 'text', text: '📅 แจ้งเตือนเวรปฏิบัติงาน', color: '#ffffff', weight: 'bold', size: 'md' },
-                            { type: 'text', text: thaiDate, color: '#ffffff', size: 'xs', margin: 'xs' }
+                            { type: 'text', text: '🌲 ศูนย์ป่าไม้ขอนแก่น', color: '#93c5fd', size: 'xs', weight: 'bold' },
+                            { type: 'text', text: 'แจ้งเตือนเวรประจำวัน', color: '#ffffff', size: 'md', weight: 'bold' },
+                            { type: 'text', text: thaiDate, color: '#e2e8f0', size: 'xs', margin: 'xs' }
                         ]
                     },
-                    body: {
-                        type: 'box',
-                        layout: 'vertical',
-                        contents: [
-                            { type: 'text', text: 'ผู้เข้าเวรปฏิบัติงานประจำวัน:', size: 'sm', color: '#64748b' },
-                            { type: 'text', text: person ? `👤 ${person.name}` : 'ไม่มีผู้เข้าเวร', weight: 'bold', size: 'xl', margin: 'md', color: '#0f172a' },
-                            { type: 'text', text: `ตำแหน่ง: ${person ? person.role : '-'}`, size: 'xs', color: '#64748b', margin: 'xs' },
-                            { type: 'separator', margin: 'lg' },
-                            { type: 'text', text: '⏰ เวลาปฏิบัติงาน: 08:30 - 16:30 น.', size: 'xs', color: '#2563eb', margin: 'lg' }
-                        ]
-                    }
+                    body: { type: 'box', layout: 'vertical', contents: bodyContents }
                 }
             }]
-        };
-
-        try {
-            showToast('กำลังส่งแจ้งเตือนเข้า LINE...');
-            const res = await fetch('https://api.line.me/v2/bot/message/push', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${lineSettings.token}`
-                },
-                body: JSON.stringify(payload)
-            });
-            if (res.ok) {
-                showToast('ส่งแจ้งเตือนเข้า LINE สำเร็จ!');
-            } else {
-                alert('ส่ง LINE ไม่สำเร็จ ตรวจสอบ Token/Target ID');
-            }
-        } catch (err) {
-            alert('เกิดข้อผิดพลาดในการส่ง LINE API: ' + err.message);
-        }
+        });
     }
 
-    async function sendMonthToLine() {
-        if (!lineSettings.token || !lineSettings.targetId) {
-            alert('กรุณากรอก LINE Channel Access Token และ Target ID ในหน้าตั้งค่าก่อน');
-            return;
-        }
-
-        const yearMonth = document.getElementById('month-picker').value || new Date().toISOString().slice(0, 7);
-        const [year, month] = yearMonth.split('-').map(Number);
+    function sendMonthSummaryToLine() {
+        const ym = document.getElementById('month-picker').value;
+        const [year, month] = ym.split('-').map(Number);
         const daysInMonth = new Date(year, month, 0).getDate();
-        const monthName = new Date(year, month - 1, 1).toLocaleDateString('th-TH', { month: 'long', year: 'numeric' });
+        let text = `🌲 สรุปตารางเวรยาม ศูนย์ป่าไม้ขอนแก่น\nประจำเดือน ${formatThaiMonth(ym)}\n====================\n`;
 
-        let summaryText = `📅 สรุปตารางเวรเดือน ${monthName}\n------------------------\n`;
         for (let d = 1; d <= daysInMonth; d++) {
             const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-            const shifts = getShiftsForDate(dateStr);
-            const pName = shifts.length > 0 ? shifts[0].name : '-';
-            summaryText += `วันที่ ${d}: ${pName}\n`;
+            const entry = scheduleStore[dateStr] || {};
+            const dMem = dayMembers.find(m => m.id === entry.dayId);
+            const nMem = nightMembers.find(m => m.id === entry.nightId);
+            const dayPart = isHoliday(dateStr) ? `☀️${dMem ? shortenName(dMem.name) : '-'} | ` : '';
+            text += `${d} : ${dayPart}🌙${nMem ? shortenName(nMem.name) : '-'}\n`;
         }
 
-        const payload = {
-            to: lineSettings.targetId,
-            messages: [{
-                type: 'text',
-                text: summaryText
-            }]
-        };
-
-        try {
-            showToast('กำลังส่งตารางเวรทั้งเดือนเข้า LINE...');
-            const res = await fetch('https://api.line.me/v2/bot/message/push', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${lineSettings.token}`
-                },
-                body: JSON.stringify(payload)
-            });
-            if (res.ok) {
-                showToast('ส่งสรุปตารางเวรทั้งเดือนเข้า LINE สำเร็จ!');
-            } else {
-                alert('ส่ง LINE ไม่สำเร็จ ตรวจสอบ Token/Target ID');
-            }
-        } catch (err) {
-            alert('เกิดข้อผิดพลาดในการส่ง LINE API: ' + err.message);
-        }
+        pushLineFlex({
+            to: appSettings.lineTargetId,
+            messages: [{ type: 'text', text }]
+        });
     }
 
-    async function testLineMessage() {
-        if (!lineSettings.token || !lineSettings.targetId) {
-            alert('กรุณากรอก Token และ Target ID ให้ครบก่อนทดสอบ');
-            return;
-        }
-        showToast('กำลังส่งข้อความทดสอบ...');
-        try {
-            const res = await fetch('https://api.line.me/v2/bot/message/push', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${lineSettings.token}`
-                },
-                body: JSON.stringify({
-                    to: lineSettings.targetId,
-                    messages: [{ type: 'text', text: '🔔 ทดสอบระบบแจ้งเตือน LINE API สำเร็จ!' }]
-                })
-            });
-            if (res.ok) {
-                alert('ส่งข้อความทดสอบเข้า LINE เรียบร้อยแล้ว!');
-            } else {
-                alert('เกิดข้อผิดพลาด! กรุณาตรวจสอบ Token หรือ Target ID');
-            }
-        } catch (e) {
-            alert('ข้อผิดพลาด: ' + e.message);
-        }
+    function testLineConnection() {
+        pushLineFlex({
+            to: appSettings.lineTargetId,
+            messages: [{ type: 'text', text: '🌲 ทดสอบการเชื่อมต่อ LINE Messaging API ระบบตารางเวรศูนย์ป่าไม้ขอนแก่น สำเร็จ!' }]
+        });
     }
 
     async function syncWithGoogleSheet() {
-        if (!settings.apiUrl) {
-            alert('กรุณากรอก Google Apps Script Web App URL ในหน้าตั้งค่าก่อนทำการ Sync');
+        if (!appSettings.gasUrl) {
+            Swal.fire('ไม่พบ Web App URL', 'กรุณาตั้งค่า Google Apps Script URL ในหน้าตั้งค่าก่อน', 'warning');
             return;
+        }
+        const ym = document.getElementById('month-picker').value;
+        const [year, month] = ym.split('-').map(Number);
+        const daysInMonth = new Date(year, month, 0).getDate();
+        const rows = [];
+
+        for (let d = 1; d <= daysInMonth; d++) {
+            const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+            const entry = scheduleStore[dateStr] || {};
+            const dMem = dayMembers.find(m => m.id === entry.dayId);
+            const nMem = nightMembers.find(m => m.id === entry.nightId);
+            rows.push({
+                date: dateStr,
+                isHoliday: isHoliday(dateStr),
+                dayName: dMem ? dMem.name : '',
+                dayPhone: dMem ? dMem.phone : '',
+                nightName: nMem ? nMem.name : '',
+                nightPhone: nMem ? nMem.phone : ''
+            });
         }
 
         try {
-            showToast('กำลังซิงค์ข้อมูลกับ Google Sheets...');
-            const response = await fetch(settings.apiUrl, {
+            Swal.fire({ title: 'กำลังซิงค์ลง Google Sheets...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            const res = await fetch(appSettings.gasUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'text/plain' },
-                body: JSON.stringify({
-                    action: 'syncData',
-                    members: members,
-                    settings: settings,
-                    overrides: dayOverrides
-                })
+                body: JSON.stringify({ action: 'syncSchedule', yearMonth: ym, rows })
             });
-
-            const result = await response.json();
-            if (result.status === 'success') {
-                showToast('ซิงค์ข้อมูลลง Google Sheets เรียบร้อยแล้ว!');
+            const data = await res.json();
+            if (data.status === 'success') {
+                Swal.fire('ซิงค์สำเร็จ!', `บันทึกตารางเวรเดือน ${formatThaiMonth(ym)} ลง Google Sheets เรียบร้อย`, 'success');
             } else {
-                alert('เกิดข้อผิดพลาดจาก Google Apps Script: ' + result.message);
+                Swal.fire('เกิดข้อผิดพลาด', data.message, 'error');
             }
-        } catch (error) {
-            alert('ไม่สามารถเชื่อมต่อ API ได้: ' + error.message);
+        } catch (err) {
+            Swal.fire('เชื่อมต่อไม่สำเร็จ', err.message, 'error');
         }
     }
 
-    function copyGasCode() {
-        const textarea = document.getElementById('gasCodeTextArea');
-        textarea.select();
+    function copyGasScript() {
+        const el = document.getElementById('gasCodeTextarea');
+        el.select();
         document.execCommand('copy');
-        showToast('คัดลอกโค้ด GAS เรียบร้อยแล้ว');
-    }
-
-    function showToast(msg) {
-        document.getElementById('toast-message').innerText = msg;
-        const toastEl = document.getElementById('liveToast');
-        const toast = new bootstrap.Toast(toastEl, { delay: 3000 });
-        toast.show();
+        Swal.fire({ toast: true, position: 'bottom-end', icon: 'success', title: 'คัดลอกโค้ด Apps Script แล้ว', showConfirmButton: false, timer: 2000 });
     }
 </script>
 </body>
