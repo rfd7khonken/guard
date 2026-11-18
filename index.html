@@ -276,8 +276,8 @@
             <button id="btnAutoGenerate" class="btn btn-success admin-only" onclick="confirmGenerateMonth()">
               <i class="bi bi-arrow-repeat me-1"></i> คำนวณจัดเวรเดือนนี้อัตโนมัติ (นับต่อจากเดือนเดิม)
             </button>
-            <button id="btnResetOct" class="btn btn-outline-success admin-only" onclick="restoreOct2026Official()">
-              <i class="bi bi-file-earmark-check me-1"></i> โหลดข้อมูล ต.ค. 69 (ตั้งต้น)
+            <button id="btnResetNov" class="btn btn-outline-success admin-only" onclick="restoreNov2026Official()">
+              <i class="bi bi-file-earmark-check me-1"></i> รีเซ็ตตั้งต้น พ.ย. 69
             </button>
             <button id="btnSendMonthLine" class="btn btn-primary admin-only" onclick="sendMonthlyLineSummary()">
               <i class="bi bi-line me-1"></i> ส่งสรุปเวรเดือนนี้เข้า LINE
@@ -471,7 +471,7 @@
 
         <div id="printableArea" class="official-doc shadow-sm">
           <div class="text-center mb-3">
-            <h5 class="fw-bold mb-1" id="docTitleLine1">บัญชีรายชื่อผู้อยู่เวรยาม (เวลากลางวัน วันหยุดราชการ) ประจำเดือน ตุลาคม ๒๕๖๙</h5>
+            <h5 class="fw-bold mb-1" id="docTitleLine1">บัญชีรายชื่อผู้อยู่เวรยาม (เวลากลางวัน วันหยุดราชการ) ประจำเดือน พฤศจิกายน ๒๕๖๙</h5>
             <h6 class="fw-bold mb-0" id="docTitleLine2">คำสั่งศูนย์ป่าไม้ขอนแก่น ที่ ๑๐/๒๕๖๙ ลงวันที่ ๓๐ ตุลาคม พ.ศ. ๒๕๖๙</h6>
           </div>
           <table class="table table-bordered text-center mb-0">
@@ -748,10 +748,10 @@
 
 <script>
 // =========================================================================
-// 1. INITIAL DATA & CONSTANTS
+// 1. INITIAL DATA & CONSTANTS (เริ่มต้นที่ พฤศจิกายน 2569)
 // =========================================================================
-const STORAGE_KEY = 'kk_forestry_duty_roster_v5';
-const SESSION_KEY = 'kk_forestry_session_v5';
+const STORAGE_KEY = 'kk_forestry_duty_roster_v6';
+const SESSION_KEY = 'kk_forestry_session_v6';
 
 const THAI_MONTHS = [
   'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
@@ -772,26 +772,29 @@ const DEFAULT_DAY_MEMBERS = [
   { id: 'D8', name: 'นางสาวอรวรรณ นพเก้า', phone: '092 989 3264' }
 ];
 
-// ชุดเวรกลางคืน 7 คน
+// ชุดเวรกลางคืน 7 คน (เริ่มต้นที่ นายวิทวัฒน์ สินธุรักษ์ ในวันที่ 1 พ.ย. 69 เพื่อต่อจาก นายปฏิพัทธ์ ชาญสุวรรณ)
 const DEFAULT_NIGHT_MEMBERS = [
-  { id: 'N1', name: 'นายสุภทรชัย ภัทรธรรม', phone: '082 229 2050' },
-  { id: 'N2', name: 'นายจตุพล อุทยานสุทธิ', phone: '061 514 1774' },
-  { id: 'N3', name: 'นายสุทธิรักษ์ สอนถม', phone: '063 407 5068' },
-  { id: 'N4', name: 'นายวิรัตน์ จันทร์สุพร', phone: '082 102 8391' },
-  { id: 'N5', name: 'นายธนากร สอนซุน', phone: '089 084 0401' },
-  { id: 'N6', name: 'นายปฏิพัทธ์ ชาญสุวรรณ', phone: '094 359 5382' },
-  { id: 'N7', name: 'นายวิทวัฒน์ สินธุรักษ์', phone: '084 093 2541' }
+  { id: 'N1', name: 'นายวิทวัฒน์ สินธุรักษ์', phone: '084 093 2541' },
+  { id: 'N2', name: 'นายสุภทรชัย ภัทรธรรม', phone: '082 229 2050' },
+  { id: 'N3', name: 'นายจตุพล อุทยานสุทธิ', phone: '061 514 1774' },
+  { id: 'N4', name: 'นายสุทธิรักษ์ สอนถม', phone: '063 407 5068' },
+  { id: 'N5', name: 'นายวิรัตน์ จันทร์สุพร', phone: '082 102 8391' },
+  { id: 'N6', name: 'นายธนากร สอนซุน', phone: '089 084 0401' },
+  { id: 'N7', name: 'นายปฏิพัทธ์ ชาญสุวรรณ', phone: '094 359 5382' }
 ];
 
-// วันหยุดราชการไทย
+// วันหยุดราชการไทย (พ.ศ. 2569 - 2570)
 const DEFAULT_HOLIDAYS = {
-  '2026-10-13': 'วันคล้ายวันสวรรคต ร.9',
-  '2026-10-23': 'วันปิยมหาราช',
   '2026-12-05': 'วันคล้ายวันพระบรมราชสมภพ ร.9 / วันพ่อแห่งชาติ',
   '2026-12-07': 'ชดเชยวันคล้ายวันพระบรมราชสมภพ ร.9',
   '2026-12-10': 'วันรัฐธรรมนูญ',
   '2026-12-31': 'วันสิ้นปี',
-  '2027-01-01': 'วันขึ้นปีใหม่'
+  '2027-01-01': 'วันขึ้นปีใหม่',
+  '2027-02-22': 'วันมาฆบูชา',
+  '2027-04-06': 'วันจักรี',
+  '2027-04-13': 'วันสงกรานต์',
+  '2027-04-14': 'วันสงกรานต์',
+  '2027-04-15': 'วันสงกรานต์'
 };
 
 const DEFAULT_USERS = [
@@ -799,29 +802,11 @@ const DEFAULT_USERS = [
   { username: 'user', password: 'user1234', fullname: 'เจ้าหน้าที่ทั่วไป (ดูตารางเวร)', role: 'VIEWER' }
 ];
 
-function buildOfficialOct2026Schedule() {
-  const schedule = {};
-  const nightMemberIds = ['N1', 'N2', 'N3', 'N4', 'N5', 'N6', 'N7', 'N1', 'N2', 'N3', 'N4', 'N5', 'N6', 'N7', 'N1', 'N2', 'N3', 'N4', 'N5', 'N6', 'N7', 'N1', 'N2', 'N3', 'N4', 'N5', 'N6', 'N7', 'N1', 'N6', 'N7'];
-  
-  for (let d = 1; d <= 31; d++) {
-    const dd = String(d).padStart(2, '0');
-    const dateKey = `2026-10-${dd}`;
-    schedule[dateKey] = {
-      dayMemberId: null,
-      nightMemberId: nightMemberIds[d - 1],
-      overridden: false
-    };
-  }
-  return schedule;
-}
-
 let appState = {
   dayMembers: JSON.parse(JSON.stringify(DEFAULT_DAY_MEMBERS)),
   nightMembers: JSON.parse(JSON.stringify(DEFAULT_NIGHT_MEMBERS)),
   holidays: { ...DEFAULT_HOLIDAYS },
-  schedules: {
-    '2026-10': buildOfficialOct2026Schedule()
-  },
+  schedules: {},
   users: JSON.parse(JSON.stringify(DEFAULT_USERS)),
   logs: [],
   gasUrl: '',
@@ -830,7 +815,7 @@ let appState = {
 
 let currentUser = null;
 let selectedYear = 2026;
-let selectedMonth = 12; // ตั้งค่าเริ่มต้นแสดงเดือนธันวาคม 2569 ทันทีเพื่อให้เห็นผลลัพธ์
+let selectedMonth = 11; // เริ่มต้นที่ พฤศจิกายน 2569
 let activeModalDateKey = null;
 let dayChartInstance = null;
 let nightChartInstance = null;
@@ -857,16 +842,12 @@ function loadStateFromLocal() {
     try {
       const parsed = JSON.parse(raw);
       appState = { ...appState, ...parsed };
-      if (!appState.schedules['2026-10']) {
-        appState.schedules['2026-10'] = buildOfficialOct2026Schedule();
-      }
     } catch (e) {
       console.error('Error parsing local state:', e);
     }
   }
-  // ตรวจสอบและสร้างตารางเดือน พ.ศ. 2569 ให้ต่อเนื่องถึง ธ.ค. 2569 อัตโนมัติ
+  // สร้างตาราง พ.ย. 2569 อัตโนมัติถ้ายังไม่มี
   ensureMonthScheduleExists(2026, 11);
-  ensureMonthScheduleExists(2026, 12);
 }
 
 function saveState(logEntry = null) {
@@ -979,12 +960,12 @@ function updateSyncBadge() {
 }
 
 // =========================================================================
-// 4. SMART CONTINUOUS SHIFT ROTATION ALGORITHM (แก้ไขปัญหาเวรซ้ำวันเดิม)
+// 4. SMART CONTINUOUS SHIFT ROTATION ALGORITHM (เริ่ม พ.ย. 69 & ไม่ซ้ำวันในสัปดาห์)
 // =========================================================================
 function populateMonthSelector() {
   const sel = document.getElementById('monthSelector');
   sel.innerHTML = '';
-  const startYear = 2026, startMonth = 10;
+  const startYear = 2026, startMonth = 11; // เริ่มต้นรายการเดือนที่ พฤศจิกายน 2569
   for (let i = 0; i < 15; i++) {
     let m = startMonth + i;
     let y = startYear + Math.floor((m - 1) / 12);
@@ -1040,7 +1021,7 @@ function confirmGenerateMonth() {
   const monthName = `${THAI_MONTHS[selectedMonth - 1]} ${selectedYear + 543}`;
   Swal.fire({
     title: `คำนวณจัดตารางเวรอัตโนมัติ?`,
-    text: `ระบบจะคำนวณคิวเวรกลางวันและกลางคืนของเดือน ${monthName} ต่อเนื่องจากเดือนก่อนหน้าโดยอัตโนมัติ`,
+    text: `ระบบจะคำนวณคิวเวรกลางวันและกลางคืนของเดือน ${monthName} ต่อเนื่องจากเดือนก่อนหน้าโดยไม่ซ้ำวันในสัปดาห์`,
     icon: 'question',
     showCancelButton: true,
     confirmButtonColor: '#166534',
@@ -1055,11 +1036,11 @@ function confirmGenerateMonth() {
   });
 }
 
-function restoreOct2026Official() {
+function restoreNov2026Official() {
   if (currentUser.role !== 'ADMIN') return;
   Swal.fire({
-    title: 'รีเซ็ตข้อมูลใหม่ทั้งหมดตั้งแต่ ต.ค. 2569?',
-    text: 'การกระทำนี้จะล้างตารางเดือน พ.ย. และ ธ.ค. 2569 แล้วคำนวณใหม่โดยไม่ให้เวรกลางคืนซ้ำวันเดิม',
+    title: 'รีเซ็ตข้อมูลตั้งต้น พฤศจิกายน 2569?',
+    text: 'ล้างตารางทั้งหมดและเริ่มนับใหม่ตั้งแต่ 1 พ.ย. 2569 (เวรกลางคืนเริ่มที่ นายวิทวัฒน์ สินธุรักษ์)',
     icon: 'warning',
     showCancelButton: true,
     confirmButtonColor: '#166534',
@@ -1067,55 +1048,62 @@ function restoreOct2026Official() {
     cancelButtonText: 'ยกเลิก'
   }).then(res => {
     if (res.isConfirmed) {
-      appState.schedules = { '2026-10': buildOfficialOct2026Schedule() };
-      generateMonthSchedule(2026, 11, false);
-      generateMonthSchedule(2026, 12, false);
+      appState.schedules = {};
       selectedYear = 2026;
-      selectedMonth = 12;
-      document.getElementById('monthSelector').value = '2026-12';
+      selectedMonth = 11;
+      document.getElementById('monthSelector').value = '2026-11';
+      generateMonthSchedule(2026, 11, false);
       saveState({
         action: 'GENERATE_SHIFT',
-        details: 'รีเซ็ตและจัดตารางเวรใหม่เพื่อป้องกันการซ้ำวันในสัปดาห์',
-        targetDate: '2026-12'
+        details: 'รีเซ็ตตารางเวรเริ่มต้นใหม่ตั้งแต่เดือนพฤศจิกายน 2569',
+        targetDate: '2026-11'
       });
       renderAllViews();
-      Swal.fire('เรียบร้อย', 'จัดตารางเวรใหม่เรียบร้อยแล้ว เวรกลางคืนจะไม่ซ้ำวันเดิมครับ', 'success');
+      Swal.fire('เรียบร้อย', 'ตั้งค่าเริ่มต้นเดือนพฤศจิกายน 2569 เรียบร้อยแล้ว', 'success');
     }
   });
 }
 
+// อัลกอริทึมจัดเวรต่อเนื่องข้ามเดือน + ป้องกันชนวันในสัปดาห์เดิม (7 วัน)
 function generateMonthSchedule(year, month, logAction = true) {
   const monthKey = `${year}-${String(month).padStart(2, '0')}`;
   const daysInMonth = new Date(year, month, 0).getDate();
 
+  // สร้างเดือนก่อนหน้าอัตโนมัติถ้าผู้ใช้กดข้ามเดือน (ตั้งแต่ พ.ย. 2569 เป็นต้นไป)
+  if (year > 2026 || (year === 2026 && month > 11)) {
+    let prevY = year, prevM = month - 1;
+    if (prevM < 1) { prevM = 12; prevY--; }
+    const prevKey = `${prevY}-${String(prevM).padStart(2, '0')}`;
+    if (!appState.schedules[prevKey]) {
+      generateMonthSchedule(prevY, prevM, false);
+    }
+  }
+
   let prevY = year, prevM = month - 1;
   if (prevM < 1) { prevM = 12; prevY--; }
   const prevMonthKey = `${prevY}-${String(prevM).padStart(2, '0')}`;
-  
-  if (!appState.schedules[prevMonthKey]) {
-    if (prevM === 11 && prevY === 2026) {
-      generateMonthSchedule(2026, 11, false);
-    } else if (prevM === 10 && prevY === 2026) {
-      appState.schedules['2026-10'] = buildOfficialOct2026Schedule();
-    }
-  }
   const prevSchedule = appState.schedules[prevMonthKey];
 
   let nextDayIdx = 0;
   let nextNightIdx = 0;
 
+  // หาคิวถัดไปสำหรับเวรกลางวันจากวันหยุดสุดท้ายของเดือนก่อนหน้า
   if (prevSchedule && appState.dayMembers.length > 0) {
     const prevDays = Object.keys(prevSchedule).sort();
-    if (prevDays.length > 0) {
-      const lastDayKey = prevDays[prevDays.length - 1];
-      const lastDayMemberId = prevSchedule[lastDayKey].dayMemberId;
+    for (let i = prevDays.length - 1; i >= 0; i--) {
+      const lastDayMemberId = prevSchedule[prevDays[i]].dayMemberId;
       if (lastDayMemberId) {
         const idx = appState.dayMembers.findIndex(m => m.id === lastDayMemberId);
-        if (idx !== -1) nextDayIdx = (idx + 1) % appState.dayMembers.length;
+        if (idx !== -1) {
+          nextDayIdx = (idx + 1) % appState.dayMembers.length;
+          break;
+        }
       }
     }
   }
 
+  // เก็บประวัติ 7 วันย้อนหลัง (รวมข้ามเดือน) เพื่อป้องกันคนเดิมลงวันในสัปดาห์ซ้ำกัน
+  let recentNightIds = [];
   if (prevSchedule && appState.nightMembers.length > 0) {
     const prevDays = Object.keys(prevSchedule).sort();
     if (prevDays.length > 0) {
@@ -1125,6 +1113,10 @@ function generateMonthSchedule(year, month, logAction = true) {
         const idx = appState.nightMembers.findIndex(m => m.id === lastNightMemberId);
         if (idx !== -1) nextNightIdx = (idx + 1) % appState.nightMembers.length;
       }
+      for (let i = prevDays.length - 1; i >= Math.max(0, prevDays.length - 7); i--) {
+        const nId = prevSchedule[prevDays[i]].nightMemberId;
+        if (nId) recentNightIds.unshift(nId);
+      }
     }
   }
 
@@ -1132,39 +1124,34 @@ function generateMonthSchedule(year, month, logAction = true) {
   const nightCount = appState.nightMembers.length;
   const dayCount = appState.dayMembers.length;
 
-  let recentNightIds = [];
-  if (prevSchedule) {
-    const prevDays = Object.keys(prevSchedule).sort();
-    // ขยายขอบเขตการเช็คย้อนหลังเป็น 6 วัน เพื่อป้องกันไม่ให้วนมาซ้ำวันในสัปดาห์เดิม
-    for (let i = prevDays.length - 1; i >= Math.max(0, prevDays.length - 6); i--) {
-      const nId = prevSchedule[prevDays[i]].nightMemberId;
-      if (nId) recentNightIds.unshift(nId);
-    }
-  }
-
   for (let d = 1; d <= daysInMonth; d++) {
     const dd = String(d).padStart(2, '0');
     const dateKey = `${monthKey}-${dd}`;
 
+    // เวรกลางวัน (วันหยุดเสาร์-อาทิตย์ และวันหยุดนักขัตฤกษ์)
     let assignedDayId = null;
     if (isWeekendOrHoliday(year, month, d) && dayCount > 0) {
       assignedDayId = appState.dayMembers[nextDayIdx % dayCount].id;
       nextDayIdx = (nextDayIdx + 1) % dayCount;
     }
 
+    // เวรกลางคืน (ทุกวัน - เลื่อนคิวอัตโนมัติถ้าชื่อซ้ำกับ 7 วันล่าสุด เพื่อไม่ให้ลงวันเดิมในสัปดาห์)
     let assignedNightId = null;
     if (nightCount > 0) {
       let chosenIdx = nextNightIdx % nightCount;
       let attempts = 0;
-      // ป้องกันไม่ให้ซ้ำกับ 6 คนล่าสุด (ป้องกันชนวันเดิมในสัปดาห์)
-      while (recentNightIds.includes(appState.nightMembers[chosenIdx].id) && attempts < nightCount * 3) {
+      const windowLimit = Math.min(7, nightCount - 1);
+      const checkWindow = recentNightIds.slice(-windowLimit);
+
+      while (checkWindow.includes(appState.nightMembers[chosenIdx].id) && attempts < nightCount * 2) {
         nextNightIdx++;
         chosenIdx = nextNightIdx % nightCount;
         attempts++;
       }
+
       assignedNightId = appState.nightMembers[chosenIdx].id;
       recentNightIds.push(assignedNightId);
-      if (recentNightIds.length > 6) {
+      if (recentNightIds.length > 7) {
         recentNightIds.shift();
       }
       nextNightIdx++;
